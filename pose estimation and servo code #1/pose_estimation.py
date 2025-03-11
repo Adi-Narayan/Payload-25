@@ -33,11 +33,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "-n", "--net",
         help="Path for the network in HEF format.",
-        default="yolov8s_pose.hef"
+        default="/home/thrustmit/Hailo-Application-Code-Examples/runtime/python/pose_estimation/pyramid.hef"
     )
     parser.add_argument(
         "-i", "--input",
-        default="zidane.jpg",
+        default="/home/thrustmit/Hailo-Application-Code-Examples/runtime/python/pose_estimation/frames",
         help="Path to the input - either an image or a folder of images."
     )
     parser.add_argument(

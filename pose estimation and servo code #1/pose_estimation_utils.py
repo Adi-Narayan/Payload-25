@@ -149,23 +149,17 @@ class PoseEstPostProcessing:
 
         return output
 
-
     def visualize_pose_estimation_result(
-        self, results: dict, img: Image.Image, *, detection_threshold: float = 0.5,
-        joint_threshold: float = 0.5
-    ) -> np.ndarray:
-        """
-        Visualize pose estimation results on an image.
-
-        Args:
-            results (Dict): The processed pose estimation results.
-            img (Image.Image): The input image on which to draw the results.
-            detection_threshold (float): Threshold for detecting bounding boxes.
-            joint_threshold (float): Threshold for detecting joints.
-
-        Returns:
-            np.ndarray: Image with visualized pose estimations.
-        """
+            self, results: dict, img: Image.Image, *, detection_threshold: float = 0.5,
+            joint_threshold: float = 0.5
+        ) -> np.ndarray:
+        # Initialize histories if not already present
+        if not hasattr(self, 'trail_history'):
+            self.trail_history = []
+        
+        if not hasattr(self, 'square_history'):
+            self.square_history = []
+        
         if 'predictions' in results:
             results = results['predictions']
             bboxes, scores, keypoints, joint_scores = results
@@ -173,64 +167,168 @@ class PoseEstPostProcessing:
             bboxes, scores, keypoints, joint_scores = (
                 results['bboxes'], results['scores'], results['keypoints'], results['joint_scores']
             )
-
+        
         batch_size = bboxes.shape[0]
         assert batch_size == 1
-
+        
         box, score, keypoint, keypoint_score = bboxes[0], scores[0], keypoints[0], joint_scores[0]
         image = cv2.cvtColor(np.array(img), cv2.COLOR_BGR2RGB)
-
-        # Define colors for each side of the pyramid
+        
+        # Create a heatmap layer
+        heatmap = np.zeros((image.shape[0], image.shape[1]), dtype=np.float32)
+        
         colors = [
             (255, 0, 0),   # Red
             (0, 255, 0),   # Green
             (0, 0, 255),   # Blue
             (255, 255, 0), # Yellow
         ]
-
+        
+        trail_color = (255, 105, 180)  # Pink
+        trail_opacity = 0.9
+        
+        all_detections_info = []
+        
         for (detection_box, detection_score, detection_keypoints,
              detection_keypoints_score) in zip(box, score, keypoint, keypoint_score):
             if detection_score < detection_threshold:
                 continue
-
-            # Draw bounding box
+            
+            # Get bounding box coordinates
             xmin, ymin, xmax, ymax = [int(x) for x in detection_box]
-            cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (255, 0, 0), 1)
-            cv2.putText(image, str(detection_score), (xmin, ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (36, 255, 12), 1)
-
-            # Reshape keypoints to (5, 2)
+            
+            # Store square coordinates for heatmap
+            square_coords = np.array([
+                [xmin, ymin],  # top-left
+                [xmax, ymin],  # top-right
+                [xmax, ymax],  # bottom-right
+                [xmin, ymax]   # bottom-left
+            ])
+            self.square_history.append(square_coords)
+            
+            # Keep only last 30 squares for the heatmap
+            if len(self.square_history) > 30:
+                self.square_history = self.square_history[-30:]
+            
             detection_keypoints = detection_keypoints.reshape(5, 2)
-
-            # Define the sides of the pyramid using keypoints
             sides = [
                 [0, 1, 2],  # Side 1: apex, bottom-left, bottom-right
                 [0, 2, 3],  # Side 2: apex, bottom-right, top-right
                 [0, 3, 4],  # Side 3: apex, top-right, top-left
                 [0, 4, 1],  # Side 4: apex, top-left, bottom-left
             ]
-
-            # Draw filled polygons for each side
+            
+            green_face_points = np.array([detection_keypoints[idx] for idx in sides[0]], dtype=np.int32)
+            green_face_center = np.mean(green_face_points, axis=0)
+            
+            apex = detection_keypoints[0]
+            dx = apex[0] - green_face_center[0]
+            dy = apex[1] - green_face_center[1]
+            angle = np.degrees(np.arctan2(dy, dx))
+            
+            self.trail_history.append((int(apex[0]), int(apex[1])))
+            
+            if len(self.trail_history) > 8:
+                self.trail_history = self.trail_history[-8:]
+            
+            detection_info = {
+                'score': detection_score.item(),
+                'width': int(xmax - xmin),
+                'height': int(ymax - ymin),
+                'area': int((xmax - xmin) * (ymax - ymin)),
+                'perimeter': int(2 * ((xmax - xmin) + (ymax - ymin))),
+                'angle': angle
+            }
+            all_detections_info.append(detection_info)
+            
+            # Draw original visualization elements
+            pyramid_label = f"Pyramid: {detection_score.item():.2f}"
+            cv2.putText(image, pyramid_label, (xmin, ymin-10), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (36, 255, 12), 1)
+            
             for i, side in enumerate(sides):
-                # Get the keypoints for the current side
                 pts = np.array([detection_keypoints[idx] for idx in side], dtype=np.int32)
-                # Draw the filled polygon
                 cv2.fillPoly(image, [pts], colors[i])
-
-            # Draw keypoints
+            
             for joint, joint_score in zip(detection_keypoints, detection_keypoints_score):
                 if joint_score < joint_threshold:
                     continue
                 cv2.circle(image, (int(joint[0]), int(joint[1])), 5, (0, 255, 255), -1)
-
-            # Draw lines between keypoints
+            
             for joint0, joint1 in JOINT_PAIRS:
                 if joint0 < len(detection_keypoints) and joint1 < len(detection_keypoints):
                     pt1 = (int(detection_keypoints[joint0][0]), int(detection_keypoints[joint0][1]))
                     pt2 = (int(detection_keypoints[joint1][0]), int(detection_keypoints[joint1][1]))
                     cv2.line(image, pt1, pt2, (255, 0, 255), 2)
+            
+            if len(self.trail_history) > 1:
+                overlay = image.copy()
+                trail_length = len(self.trail_history)
+                for i in range(trail_length - 1):
+                    segment_opacity = (i / (trail_length - 1)) * trail_opacity
+                    pt1 = self.trail_history[i]
+                    pt2 = self.trail_history[i+1]
+                    segment_overlay = overlay.copy()
+                    cv2.line(segment_overlay, pt1, pt2, trail_color, thickness=2)
+                    cv2.addWeighted(segment_overlay, segment_opacity, overlay, 1 - segment_opacity, 0, overlay)
+                cv2.addWeighted(overlay, 1.0, image, 0.0, 0, image)
+        
+        # Generate square-based heatmap
+        if self.square_history:
+            heatmap_image = np.zeros_like(image)
+            
+            # Draw and accumulate squares with decreasing opacity
+            for idx, square in enumerate(self.square_history):
+                # Calculate opacity based on temporal position
+                opacity = (idx + 1) / len(self.square_history)
+                
+                # Create a mask for the current square
+                mask = np.zeros((image.shape[0], image.shape[1]), dtype=np.uint8)
+                cv2.fillPoly(mask, [square.astype(np.int32)], 255)
+                
+                # Add to heatmap with temporal weighting
+                heatmap += mask.astype(np.float32) * opacity
+            
+            # Normalize heatmap
+            heatmap = (heatmap - np.min(heatmap)) / (np.max(heatmap) - np.min(heatmap))
+            
+            # Convert heatmap to color (blue to red)
+            heatmap_color = cv2.applyColorMap((heatmap * 255).astype(np.uint8), cv2.COLORMAP_JET)
+            
+            # Create square contours for visualization
+            for square in self.square_history:
+                cv2.polylines(heatmap_color, [square.astype(np.int32)], True, (255, 255, 255), 1)
+            
+            # Create side-by-side display
+            combined_image = np.zeros((image.shape[0], image.shape[1] * 2, 3), dtype=np.uint8)
+            combined_image[:, :image.shape[1]] = image
+            combined_image[:, image.shape[1]:] = heatmap_color
+            
+            # Add labels
+            cv2.putText(combined_image, "Original Detection", (10, 30), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            cv2.putText(combined_image, "Square Movement Heatmap", (image.shape[1] + 10, 30), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            
+            image = combined_image
 
+        # Display info in top-left corner
+        if all_detections_info:
+            top_left_text = []
+            for i, info in enumerate(all_detections_info):
+                top_left_text.extend([
+                    f"Detection:",
+                    f"  Size: {info['width']}x{info['height']} mm",
+                    f"  Area: {info['area']} mm^2",
+                    f"  Perimeter: {info['perimeter']} mm",
+                    f"  Angle: {info['angle']:.1f}"
+                ])
+            
+            for i, line in enumerate(top_left_text):
+                cv2.putText(image, line, (10, 60 + i*20), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+        
         return image
-
     def preprocess(self, image: Image.Image, model_w: int, model_h: int) -> Image.Image:
         """
         Resize image with unchanged aspect ratio using padding.

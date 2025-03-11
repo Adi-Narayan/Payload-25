@@ -1,0 +1,63 @@
+{
+    "version": [
+        1,
+        2,
+        6
+    ],
+    "views": [
+        {
+            "viewId": 1702982416,
+            "poseId": 1702982416,
+            "path": "C:/Users/newpassword/Desktop/thrustMIT/Test_Images_Pyramid/Frames_pyramid/00000001.jpg",
+            "intrinsicId": 1620932138,
+            "metadata": {
+                "jpeg:subsampling": "4:2:0",
+                "oiio:ColorSpace": "sRGB"
+            }
+        },
+        {
+            "viewId": 1703607820,
+            "poseId": 1703607820,
+            "path": "C:/Users/newpassword/Desktop/thrustMIT/Test_Images_Pyramid/Frames_pyramid/00000000.jpg",
+            "intrinsicId": 1620932138,
+            "metadata": {
+                "jpeg:subsampling": "4:2:0",
+                "oiio:ColorSpace": "sRGB"
+            }
+        }
+    ],
+    "intrinsics": [
+        {
+            "intrinsicId": 1620932138,
+            "initialFocalLength": -1.0,
+            "focalLength": 43.45584412271571,
+            "pixelRatio": 1.0,
+            "pixelRatioLocked": true,
+            "type": "radial3",
+            "width": 640,
+            "height": 480,
+            "sensorWidth": 36.0,
+            "sensorHeight": 24.0,
+            "serialNumber": "C:/Users/newpassword/Desktop/thrustMIT/Test_Images_Pyramid/Frames_pyramid",
+            "principalPoint": [
+                0.0,
+                0.0
+            ],
+            "initializationMode": "unknown",
+            "distortionInitializationMode": "none",
+            "distortionParams": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "undistortionOffset": [
+                0.0,
+                0.0
+            ],
+            "undistortionParams": [],
+            "locked": false
+        }
+    ],
+    "featureFolder": "",
+    "matchingFolder": ""
+}

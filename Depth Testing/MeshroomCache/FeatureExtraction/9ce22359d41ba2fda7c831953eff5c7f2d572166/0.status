@@ -1,0 +1,18 @@
+{
+    "status": "SUCCESS",
+    "execMode": "LOCAL",
+    "nodeName": "FeatureExtraction_1",
+    "nodeType": "FeatureExtraction",
+    "packageName": "aliceVision",
+    "packageVersion": null,
+    "graph": "",
+    "commandLine": "aliceVision_featureExtraction  --input \"C:/Users/newpassword/Desktop/thrustMIT/Depth Testing/MeshroomCache/CameraInit/2040c840327b1c4695a48ce19cdf37b1b433eda0/cameraInit.sfm\" --masksFolder \"\" --maskExtension png --maskInvert False --describerTypes dspsift --describerPreset normal --describerQuality normal --contrastFiltering GridSort --gridFiltering True --workingColorSpace sRGB --forceCpuExtraction True --maxThreads 0 --verboseLevel info --output \"C:/Users/newpassword/Desktop/thrustMIT/Depth Testing/MeshroomCache/FeatureExtraction/9ce22359d41ba2fda7c831953eff5c7f2d572166\" --rangeStart 0 --rangeSize 40",
+    "env": null,
+    "startDateTime": "2025-02-09 20:24:52.294746",
+    "endDateTime": "2025-02-09 20:25:00.832396",
+    "elapsedTime": 8.53765058517456,
+    "hostname": "Cookie",
+    "sessionUid": "2b4f2554-e6f5-11ef-8a19-48684a6f48f6",
+    "returnCode": 0,
+    "elapsedTimeStr": "0:00:08.537651"
+}

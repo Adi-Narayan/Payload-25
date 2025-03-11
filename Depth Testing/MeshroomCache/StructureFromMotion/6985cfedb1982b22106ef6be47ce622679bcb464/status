@@ -1,0 +1,18 @@
+{
+    "status": "ERROR",
+    "execMode": "LOCAL",
+    "nodeName": "StructureFromMotion_1",
+    "nodeType": "StructureFromMotion",
+    "packageName": "aliceVision",
+    "packageVersion": null,
+    "graph": "",
+    "commandLine": "aliceVision_incrementalSfM  --input \"C:/Users/newpassword/Desktop/thrustMIT/Depth Testing/MeshroomCache/CameraInit/3e6f64bc31627c648f2c26f8108af4acbcfeffea/cameraInit.sfm\" --featuresFolders \"C:/Users/newpassword/Desktop/thrustMIT/Depth Testing/MeshroomCache/FeatureExtraction/3df1bebdad40bcc993c3bf33d943eb3f8f6d2045\" --matchesFolders \"C:/Users/newpassword/Desktop/thrustMIT/Depth Testing/MeshroomCache/FeatureMatching/b328872a9b01ecdd386225d2f22e54842107d318\" --describerTypes dspsift --localizerEstimator acransac --observationConstraint Scale --localizerEstimatorMaxIterations 4096 --localizerEstimatorError 0.0 --lockScenePreviouslyReconstructed False --useLocalBA True --localBAGraphDistance 1 --nbFirstUnstableCameras 30 --maxImagesPerGroup 30 --bundleAdjustmentMaxOutliers 50 --maxNumberOfMatches 0 --minNumberOfMatches 0 --minInputTrackLength 2 --minNumberOfObservationsForTriangulation 2 --minAngleForTriangulation 3.0 --minAngleForLandmark 2.0 --maxReprojectionError 4.0 --minAngleInitialPair 5.0 --maxAngleInitialPair 40.0 --useOnlyMatchesFromInputFolder False --useRigConstraint True --rigMinNbCamerasForCalibration 20 --lockAllIntrinsics False --minNbCamerasToRefinePrincipalPoint 3 --filterTrackForks False --computeStructureColor True --useAutoTransform True --initialPairA \"\" --initialPairB \"\" --interFileExtension .abc --logIntermediateSteps False --verboseLevel info --output \"C:/Users/newpassword/Desktop/thrustMIT/Depth Testing/MeshroomCache/StructureFromMotion/6985cfedb1982b22106ef6be47ce622679bcb464/sfm.abc\" --outputViewsAndPoses \"C:/Users/newpassword/Desktop/thrustMIT/Depth Testing/MeshroomCache/StructureFromMotion/6985cfedb1982b22106ef6be47ce622679bcb464/cameras.sfm\" --extraInfoFolder \"C:/Users/newpassword/Desktop/thrustMIT/Depth Testing/MeshroomCache/StructureFromMotion/6985cfedb1982b22106ef6be47ce622679bcb464\"",
+    "env": null,
+    "startDateTime": "2025-02-09 20:29:29.284787",
+    "endDateTime": "",
+    "elapsedTime": 0,
+    "hostname": "Cookie",
+    "sessionUid": "2b4f2554-e6f5-11ef-8a19-48684a6f48f6",
+    "returnCode": 1,
+    "elapsedTimeStr": "0:00:00"
+}

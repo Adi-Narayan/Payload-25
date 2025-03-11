@@ -1,0 +1,18 @@
+{
+    "status": "SUCCESS",
+    "execMode": "LOCAL",
+    "nodeName": "ImageMatching_1",
+    "nodeType": "ImageMatching",
+    "packageName": "aliceVision",
+    "packageVersion": null,
+    "graph": "",
+    "commandLine": "aliceVision_imageMatching  --input \"C:/Users/newpassword/Desktop/thrustMIT/Depth Testing/MeshroomCache/CameraInit/09989f6d63f5a6ef6ec9433d3d5bdf9506d5e922/cameraInit.sfm\" --featuresFolders \"C:/Users/newpassword/Desktop/thrustMIT/Depth Testing/MeshroomCache/FeatureExtraction/a409f7eae68996164b3aaf435c2783a5d08830b3\" --method SequentialAndVocabularyTree --tree \"C:\\Users\\newpassword\\Downloads\\meshroom-2023-3-0\\Meshroom-2023.3.0\\aliceVision\\share\\aliceVision\\vlfeat_K80L3.SIFT.tree\" --weights \"\" --minNbImages 200 --maxDescriptors 500 --nbMatches 40 --nbNeighbors 5 --verboseLevel info --output \"C:/Users/newpassword/Desktop/thrustMIT/Depth Testing/MeshroomCache/ImageMatching/49ded5db22f58eba6b286d6d0b804c1db5fea049/imageMatches.txt\"",
+    "env": null,
+    "startDateTime": "2025-02-09 18:34:24.337065",
+    "endDateTime": "2025-02-09 18:34:24.702249",
+    "elapsedTime": 0.36518359184265137,
+    "hostname": "Cookie",
+    "sessionUid": "329a2b58-e6e6-11ef-b18e-48684a6f48f6",
+    "returnCode": 0,
+    "elapsedTimeStr": "0:00:00.365184"
+}

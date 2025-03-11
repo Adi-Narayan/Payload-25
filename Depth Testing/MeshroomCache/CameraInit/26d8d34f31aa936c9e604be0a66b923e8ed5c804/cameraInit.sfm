@@ -1,0 +1,56 @@
+{
+    "version": [
+        "1",
+        "2",
+        "6"
+    ],
+    "views": [
+        {
+            "viewId": "1146617317",
+            "poseId": "1146617317",
+            "frameId": "2",
+            "intrinsicId": "3875176373",
+            "path": "C:\/Users\/newpassword\/Desktop\/thrustMIT\/Test_Images_Pyramid\/Pyramid_test_pic_2.png",
+            "width": "1203",
+            "height": "845",
+            "metadata": {
+                "ResolutionUnit": "inch",
+                "XResolution": "119.99",
+                "YResolution": "119.99",
+                "oiio:ColorSpace": "sRGB"
+            }
+        }
+    ],
+    "intrinsics": [
+        {
+            "intrinsicId": "3875176373",
+            "width": "1203",
+            "height": "845",
+            "sensorWidth": "36",
+            "sensorHeight": "24",
+            "serialNumber": "C:\/Users\/newpassword\/Desktop\/thrustMIT\/Test_Images_Pyramid",
+            "type": "radial3",
+            "initializationMode": "unknown",
+            "initialFocalLength": "-1",
+            "focalLength": "43.45584412271571",
+            "pixelRatio": "1",
+            "pixelRatioLocked": "true",
+            "principalPoint": [
+                "0",
+                "0"
+            ],
+            "distortionInitializationMode": "none",
+            "distortionParams": [
+                "0",
+                "0",
+                "0"
+            ],
+            "undistortionOffset": [
+                "0",
+                "0"
+            ],
+            "undistortionParams": "",
+            "locked": "false"
+        }
+    ]
+}

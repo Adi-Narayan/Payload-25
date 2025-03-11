@@ -1,0 +1,18 @@
+{
+    "status": "ERROR",
+    "execMode": "LOCAL",
+    "nodeName": "FeatureMatching_1",
+    "nodeType": "FeatureMatching",
+    "packageName": "aliceVision",
+    "packageVersion": null,
+    "graph": "",
+    "commandLine": "aliceVision_featureMatching  --input \"C:/Users/newpassword/Desktop/thrustMIT/Depth Testing/MeshroomCache/CameraInit/09989f6d63f5a6ef6ec9433d3d5bdf9506d5e922/cameraInit.sfm\" --featuresFolders \"C:/Users/newpassword/Desktop/thrustMIT/Depth Testing/MeshroomCache/FeatureExtraction/a409f7eae68996164b3aaf435c2783a5d08830b3\" --imagePairsList \"C:/Users/newpassword/Desktop/thrustMIT/Depth Testing/MeshroomCache/ImageMatching/49ded5db22f58eba6b286d6d0b804c1db5fea049/imageMatches.txt\" --describerTypes dspsift --photometricMatchingMethod ANN_L2 --geometricEstimator acransac --geometricFilterType fundamental_matrix --distanceRatio 0.8 --maxIteration 2048 --geometricError 0.0 --knownPosesGeometricErrorMax 5.0 --minRequired2DMotion -1.0 --maxMatches 0 --savePutativeMatches False --crossMatching False --guidedMatching False --matchFromKnownCameraPoses False --exportDebugFiles False --verboseLevel info --output \"C:/Users/newpassword/Desktop/thrustMIT/Depth Testing/MeshroomCache/FeatureMatching/32634ac5fc6835b5c5d733bf015fbaa01ab2f067\"",
+    "env": null,
+    "startDateTime": "2025-02-09 18:44:35.949935",
+    "endDateTime": "",
+    "elapsedTime": 0,
+    "hostname": "Cookie",
+    "sessionUid": "329a2b58-e6e6-11ef-b18e-48684a6f48f6",
+    "returnCode": 1,
+    "elapsedTimeStr": "0:00:00"
+}

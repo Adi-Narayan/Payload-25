@@ -1,0 +1,234 @@
+[2025-02-09 20:28:05.606292] [0x000013e8] [trace]   Embedded OCIO configuration file: 'C:\Users\newpassword\Downloads\meshroom-2023-3-0\Meshroom-2023.3.0\aliceVision/share/aliceVision/config.ocio' found.
+Program called with the following parameters:
+ * bundleAdjustmentMaxOutliers = 50
+ * computeStructureColor = 1
+ * describerTypes = "dspsift"
+ * extraInfoFolder = "C:/Users/newpassword/Desktop/thrustMIT/Depth Testing/MeshroomCache/StructureFromMotion/eb8a034aee7ce44ada7a6f5e01d6c49968ce9957"
+ * featuresFolders =  = [C:/Users/newpassword/Desktop/thrustMIT/Depth Testing/MeshroomCache/FeatureExtraction/9ce22359d41ba2fda7c831953eff5c7f2d572166]
+ * filterTrackForks = 0
+ * initialPairA = ""
+ * initialPairB = ""
+ * input = "C:/Users/newpassword/Desktop/thrustMIT/Depth Testing/MeshroomCache/CameraInit/2040c840327b1c4695a48ce19cdf37b1b433eda0/cameraInit.sfm"
+ * interFileExtension = ".abc"
+ * localBAGraphDistance = 1
+ * localizerEstimator =  Unknown Type "enum aliceVision::robustEstimation::ERobustEstimator"
+ * localizerEstimatorError = 0
+ * localizerEstimatorMaxIterations = 4096
+ * lockAllIntrinsics = 0
+ * lockScenePreviouslyReconstructed = 0
+ * logIntermediateSteps = 0
+ * matchesFolders =  = [C:/Users/newpassword/Desktop/thrustMIT/Depth Testing/MeshroomCache/FeatureMatching/2ceeacc32f5aa70b2e8e3ccd538f075df26d32cc]
+ * maxAngleInitialPair = 40
+ * maxCoresAvailable =  Unknown Type "unsigned int" (default)
+ * maxImagesPerGroup = 30
+ * maxMemoryAvailable = 18446744073709551615 (default)
+ * maxNumberOfMatches = 0
+ * maxReprojectionError = 4
+ * minAngleForLandmark = 2
+ * minAngleForTriangulation = 3
+ * minAngleInitialPair = 5
+ * minInputTrackLength = 2
+ * minNbCamerasToRefinePrincipalPoint = 3
+ * minNumberOfMatches = 0
+ * minNumberOfObservationsForTriangulation = 2
+ * nbFirstUnstableCameras = 30
+ * observationConstraint =  Unknown Type "enum aliceVision::sfm::EFeatureConstraint"
+ * output = "C:/Users/newpassword/Desktop/thrustMIT/Depth Testing/MeshroomCache/StructureFromMotion/eb8a034aee7ce44ada7a6f5e01d6c49968ce9957/sfm.abc"
+ * outputViewsAndPoses = "C:/Users/newpassword/Desktop/thrustMIT/Depth Testing/MeshroomCache/StructureFromMotion/eb8a034aee7ce44ada7a6f5e01d6c49968ce9957/cameras.sfm"
+ * randomSeed = 5489 (default)
+ * rigMinNbCamerasForCalibration = 20
+ * useAutoTransform = 1
+ * useLocalBA = 1
+ * useOnlyMatchesFromInputFolder = 0
+ * useRigConstraint = 1
+ * verboseLevel = "info"
+
+Hardware : 
+	Detected core count : 16
+	OpenMP will use 16 cores
+	Detected available memory : 5465 Mo
+
+Loading features
+0%   10   20   30   40   50   60   70   80   90   100%
+|----|----|----|----|----|----|----|----|----|----|
+***************************************************
+[20:28:06.073651][info] Fuse matches into tracks: 
+	- # tracks: 2350
+	- # images in tracks: 40
+[20:28:06.073651][info] TrackLength, Occurrence
+[20:28:06.073651][info] 	2	1819
+[20:28:06.073651][info] 	3	283
+[20:28:06.073651][info] 	4	102
+[20:28:06.073651][info] 	5	48
+[20:28:06.073651][info] 	6	32
+[20:28:06.073651][info] 	7	18
+[20:28:06.073651][info] 	8	10
+[20:28:06.073651][info] 	9	14
+[20:28:06.073651][info] 	10	7
+[20:28:06.073651][info] 	11	5
+[20:28:06.073651][info] 	12	3
+[20:28:06.073651][info] 	13	2
+[20:28:06.073651][info] 	15	2
+[20:28:06.073651][info] 	17	2
+[20:28:06.073651][info] 	19	2
+[20:28:06.073651][info] 	20	1
+Automatic selection of an initial pair:
+0%   10   20   30   40   50   60   70   80   90   100%
+|----|----|----|----|----|----|----|----|----|----|
+****************[20:28:06.083652][info] robustRelativePose: no sufficient coverage (the model does not support enough samples): 30
+**[20:28:06.084654][info] robustRelativePose: no sufficient coverage (the model does not support enough samples): 26
+***************************[20:28:06.103654][info] robustRelativePose: no sufficient coverage (the model does not support enough samples): 33
+******
+[20:28:06.112653][info] robustRelativePose: no sufficient coverage (the model does not support enough samples): 31
+[20:28:06.116654][info] robustRelativePose: no sufficient coverage (the model does not support enough samples): 25
+[20:28:06.117653][info] robustRelativePose: no sufficient coverage (the model does not support enough samples): 34
+[20:28:06.123652][info] Initial pair is:
+	- [A] view id: 1436375939, filepath: C:/Users/newpassword/Desktop/thrustMIT/Test_Images_Pyramid/Frames_pyramid/00000024.jpg
+	- [B] view id: 1436973641, filepath: C:/Users/newpassword/Desktop/thrustMIT/Test_Images_Pyramid/Frames_pyramid/00000025.jpg
+[20:28:06.124652][info] 262 matches in the image pair for the initial pose estimation.
+[20:28:06.209455][info] Bundle adjustment start.
+[20:28:06.209455][info] Start bundle adjustment iteration: 0
+[20:28:06.211457][info] Bundle Adjustment Statistics:
+	- local strategy enabled: no
+	- adjustment duration: 0.0007959 s
+	- poses:
+	    - # refined:  2
+	    - # constant: 0
+	    - # ignored:  0
+	- landmarks:
+	    - # refined:  2
+	    - # constant: 0
+	    - # ignored:  0
+	- intrinsics:
+	    - # refined:  0
+	    - # constant: 1
+	    - # ignored:  0
+	- # residual blocks: 4
+	- # successful iterations: 3
+	- # unsuccessful iterations: 0
+	- initial RMSE: 0.571753
+	- final   RMSE: 1.88662e-08
+[20:28:06.211457][info] Remove outliers: 
+	- # outliers residual error: 0
+	- # outliers angular error: 0
+[20:28:06.211457][info] Bundle adjustment iteration: 0 took 2 msec.
+[20:28:06.211457][info] Bundle adjustment with 1 iterations took 2 msec.
+[20:28:06.211457][info] Initial pair is:
+	- [A] view id: 1456352572, filepath: C:/Users/newpassword/Desktop/thrustMIT/Test_Images_Pyramid/Frames_pyramid/00000023.jpg
+	- [B] view id: 1984487933, filepath: C:/Users/newpassword/Desktop/thrustMIT/Test_Images_Pyramid/Frames_pyramid/00000034.jpg
+[20:28:06.211457][info] 148 matches in the image pair for the initial pose estimation.
+[20:28:06.270970][info] Bundle adjustment start.
+[20:28:06.270970][info] Start bundle adjustment iteration: 0
+[20:28:06.283970][info] Bundle Adjustment Statistics:
+	- local strategy enabled: no
+	- adjustment duration: 0.0108129 s
+	- poses:
+	    - # refined:  2
+	    - # constant: 0
+	    - # ignored:  0
+	- landmarks:
+	    - # refined:  272
+	    - # constant: 0
+	    - # ignored:  0
+	- intrinsics:
+	    - # refined:  0
+	    - # constant: 1
+	    - # ignored:  0
+	- # residual blocks: 544
+	- # successful iterations: 29
+	- # unsuccessful iterations: 1
+	- initial RMSE: 0.387336
+	- final   RMSE: 0.298933
+[20:28:06.283970][info] Remove outliers: 
+	- # outliers residual error: 0
+	- # outliers angular error: 124
+[20:28:06.283970][info] Bundle adjustment iteration: 0 took 12 msec.
+[20:28:06.283970][info] Start bundle adjustment iteration: 1
+[20:28:06.285970][info] Bundle Adjustment Statistics:
+	- local strategy enabled: no
+	- adjustment duration: 0.0003424 s
+	- poses:
+	    - # refined:  0
+	    - # constant: 0
+	    - # ignored:  0
+	- landmarks:
+	    - # refined:  0
+	    - # constant: 0
+	    - # ignored:  0
+	- intrinsics:
+	    - # refined:  0
+	    - # constant: 0
+	    - # ignored:  1
+	- # residual blocks: 0
+	- # successful iterations: 18446744073709551615
+	- # unsuccessful iterations: 18446744073709551615
+	- initial RMSE: -nan(ind)
+	- final   RMSE: -nan(ind)
+[20:28:06.285970][info] Remove outliers: 
+	- # outliers residual error: 0
+	- # outliers angular error: 0
+[20:28:06.286353][info] Bundle adjustment iteration: 1 took 1 msec.
+[20:28:06.286353][info] Bundle adjustment with 2 iterations took 14 msec.
+[20:28:06.286353][info] Initial pair is:
+	- [A] view id: 1418356332, filepath: C:/Users/newpassword/Desktop/thrustMIT/Test_Images_Pyramid/Frames_pyramid/00000022.jpg
+	- [B] view id: 1436375939, filepath: C:/Users/newpassword/Desktop/thrustMIT/Test_Images_Pyramid/Frames_pyramid/00000024.jpg
+[20:28:06.286353][info] 190 matches in the image pair for the initial pose estimation.
+[20:28:06.359868][info] Bundle adjustment start.
+[20:28:06.359868][info] Start bundle adjustment iteration: 0
+[20:28:06.361874][info] Bundle Adjustment Statistics:
+	- local strategy enabled: no
+	- adjustment duration: 0.0007003 s
+	- poses:
+	    - # refined:  2
+	    - # constant: 0
+	    - # ignored:  0
+	- landmarks:
+	    - # refined:  4
+	    - # constant: 0
+	    - # ignored:  0
+	- intrinsics:
+	    - # refined:  0
+	    - # constant: 1
+	    - # ignored:  0
+	- # residual blocks: 8
+	- # successful iterations: 4
+	- # unsuccessful iterations: 0
+	- initial RMSE: 0.636903
+	- final   RMSE: 3.61049e-10
+[20:28:06.361874][info] Remove outliers: 
+	- # outliers residual error: 0
+	- # outliers angular error: 0
+[20:28:06.361874][info] Bundle adjustment iteration: 0 took 1 msec.
+[20:28:06.361874][info] Bundle adjustment with 1 iterations took 1 msec.
+[20:28:06.361874][info] Initial pair is:
+	- [A] view id: 1418356332, filepath: C:/Users/newpassword/Desktop/thrustMIT/Test_Images_Pyramid/Frames_pyramid/00000022.jpg
+	- [B] view id: 1436973641, filepath: C:/Users/newpassword/Desktop/thrustMIT/Test_Images_Pyramid/Frames_pyramid/00000025.jpg
+[20:28:06.361874][info] 166 matches in the image pair for the initial pose estimation.
+[20:28:06.428873][info] Bundle adjustment start.
+[20:28:06.428873][info] Start bundle adjustment iteration: 0
+[20:28:06.430874][info] Bundle Adjustment Statistics:
+	- local strategy enabled: no
+	- adjustment duration: 0.0009043 s
+	- poses:
+	    - # refined:  2
+	    - # constant: 0
+	    - # ignored:  0
+	- landmarks:
+	    - # refined:  6
+	    - # constant: 0
+	    - # ignored:  0
+	- intrinsics:
+	    - # refined:  0
+	    - # constant: 1
+	    - # ignored:  0
+	- # residual blocks: 12
+	- # successful iterations: 6
+	- # unsuccessful iterations: 0
+	- initial RMSE: 0.361293
+	- final   RMSE: 1.53346e-09
+[20:28:06.430874][info] Remove outliers: 
+	- # outliers residual error: 0
+	- # outliers angular error: 0
+[20:28:06.430874][info] Bundle adjustment iteration: 0 took 2 msec.
+[20:28:06.430874][info] Bundle adjustment with 1 iterations took 2 msec.
+[20:28:06.431876][fatal] Initialization failed after trying all possible initial image pairs.
