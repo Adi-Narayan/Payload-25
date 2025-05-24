@@ -2,6 +2,8 @@
 
 **Vrishabha** is a real-time pose estimation and tracking system developed by **thrustMIT**. It is designed as the payload for the sounding rocket **Vayuvega**, for the **International Rocket Engineering Competition 2025 (IREC '25)**. The system demonstrates AI-based inference on the edge using the Hailo-8 AI accelerator and a Raspberry Pi 5.
 
+![Mission Patch](https://github.com/user-attachments/assets/3fd351c0-2ae0-47ac-92b4-4fe3c0cd5a11)
+
 ## 🧠 Overview
 
 At the core of the experiment is a cube mounted on a spring, simulating a target undergoing unpredictable movement. A camera, mounted on a dual-shaft 35 kg·cm torque servo motor, tracks the cube using colour-based detection within a limited and dynamically shifting field of view. The servo tilts the camera to follow the cube’s movement, enabling near real-time tracking despite motion blur, frame drops, and rotational skew.
