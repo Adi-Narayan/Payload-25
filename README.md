@@ -44,31 +44,31 @@ The project includes the following modules:
 
 | Pose Estimation |
 |-----------------|
-| ![pose_frame](images/pose_frame.jpg) |
+ ![pose_frame](https://github.com/user-attachments/assets/1946a489-69f5-4a85-8ee1-c11eea98c84a) 
 
-| Raw_Frame | Keypoint Overlay |
-|-------------|------------------|
-| ![servo_frame](images/servo_frame.jpg) | ![keypoints](images/keypoints.jpg) |
+| Tracked Output |
+|----------------|
+ ![servo_frame](https://github.com/user-attachments/assets/2358ae15-7c9d-419b-8aa0-53683a1dd4c7) 
 
 | Raw Frame and Estimated Depth |
 |-------------------------------|
-| ![raw_frame & Output](images/raw_frame.jpg) |
+ ![raw_frame & Output](https://github.com/user-attachments/assets/e9b340b1-2bee-4004-a3de-10c1799529a2) 
 
 ## Wiring Diagram
 
-| ![raw_frame](images/raw_frame.jpg) |
+ ![Wiring Diagram](https://github.com/user-attachments/assets/aec363d2-a506-4a8e-a4e3-a069ddc714b6)
 
 ## 3D Render
 
-| ![raw_frame](images/raw_frame.jpg) |
+ ![CAD view](https://github.com/user-attachments/assets/fa540125-c2a5-44df-ac28-6f1469461d34) 
 
 ## Physical Setup
 
-| ![raw_frame](images/raw_frame.jpg) |
+ ![Fully prepped test setup](https://github.com/user-attachments/assets/7656c69d-550d-4cc4-92f2-6b88b856798d) 
 
 ## Cansat Placement
 
-| ![raw_frame](images/raw_frame.jpg) |
+ ![Nose Cone](https://github.com/user-attachments/assets/de2847de-08e3-4a44-bbd4-8b6a4d300d8b) 
 
 ## 📂 Directory Structure
 
@@ -91,15 +91,20 @@ Vrishabha leverages the Hailo-8 AI accelerator to perform efficient 3D pose esti
 
 Integrated with an MPU9250 inertial measurement unit, Vrishabha triggers data collection upon detecting significant acceleration changes, logging pose data and accelerometer readings. A servo-controlled camera dynamically adjusts to track red-colored objects, ensuring precise alignment in high-speed flight scenarios. The system captures, processes, and saves images with annotated bounding boxes, keypoints, and cube faces, delivering robust performance in dynamic environments.
 
-## ⚙️ System Requirements
+## ⚙️ System Requirements - Hardware and Software
 
 - Raspberry Pi 5
 - Raspberry Pi AI HAT+ (Hailo-8)
-- Picamera2 or compatible camera
+- Picamera compatible cameras
 - MPU9250
+- PCA9685
+- I2C hub
+- Servo motor with camera mount (custom)
+- Lights (depends on environment)
+- Buzzer
 - Python 3.9+
 - Dependencies:
-  - `opencv-python`, `numpy`, `Pillow`, `loguru`, `smbus`, `psutil`, `adafruit_servokit`, `picamera2`, `libcamera`, `hailo_platform`, `diskqueue`, `requests`
+  - `opencv-python`, `numpy`, `Pillow`, `loguru`, `smbus`, `psutil`, `adafruit_servokit`, `picamera2`, `libcamera`, `hailo_platform`, `requests`
 
 ## 🔒 Disclaimer
 
