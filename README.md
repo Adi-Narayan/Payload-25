@@ -34,7 +34,7 @@ The project includes the following modules:
 ## 🧪 Experimental Setup
 
 - **Target**: Red-colored cube mounted on a spring.
-- **Camera**: Raspberry Pi HQ Camera or Picamera2.
+- **Camera**: Raspberry Pi Camera or Picamera2 compatible cameras.
 - **AI Inference**: Hailo-8 on Raspberry Pi 5.
 - **MPU**: MPU9250 for motion-triggered activation.
 - **System Outputs**:
