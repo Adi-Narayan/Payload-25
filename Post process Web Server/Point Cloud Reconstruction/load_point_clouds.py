@@ -1,3 +1,8 @@
+""" 1. Run load_point_clouds.py
+    2. Run python -m http.server 8000 on cmd
+    3. Open http://localhost:8000/point_cloud_reconstruct.html on browser
+"""
+
 import json
 import numpy as np
 from datetime import datetime
