@@ -18,6 +18,75 @@
             width: 100vw;
             height: 100vh;
             position: relative;
+            display: flex;
+        }
+        
+        #animation-panel {
+            width: 60%;
+            height: 100vh;
+            position: relative;
+        }
+        
+        #video-panel {
+            width: 40%;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.9);
+            border-left: 2px solid #00ff88;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        
+        #video-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 250px;
+        }
+        
+        #video-player {
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            max-height: 200px;
+            border: 2px solid #00ff88;
+            border-radius: 10px;
+            background: black;
+        }
+        
+        #video-controls {
+            margin-top: 20px;
+            width: 100%;
+        }
+        
+        #video-info {
+            color: #00ff88;
+            font-size: 12px;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .sync-controls {
+            background: rgba(0, 20, 10, 0.8);
+            border: 1px solid #00ff88;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+        
+        input[type="file"] {
+            background: rgba(0, 20, 10, 0.8);
+            border: 1px solid #00ff88;
+            color: #00ff88;
+            padding: 8px;
+            border-radius: 5px;
+            width: 100%;
+            margin-bottom: 10px;
+            font-size: 11px;
         }
         
         #controls {
@@ -30,21 +99,22 @@
             padding: 15px;
             border-radius: 10px;
             backdrop-filter: blur(10px);
+            max-width: 280px;
         }
         
         .control-group {
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
         
         label {
             display: block;
             margin-bottom: 5px;
-            font-size: 12px;
+            font-size: 11px;
             color: #00ff88;
         }
         
         input[type="range"] {
-            width: 200px;
+            width: 180px;
             margin-bottom: 5px;
         }
         
@@ -52,12 +122,13 @@
             background: linear-gradient(45deg, #00ff88, #00cc66);
             border: none;
             color: black;
-            padding: 8px 16px;
-            margin: 5px;
+            padding: 6px 12px;
+            margin: 3px;
             border-radius: 5px;
             cursor: pointer;
             font-weight: bold;
             transition: all 0.3s ease;
+            font-size: 11px;
         }
         
         button:hover {
@@ -75,39 +146,82 @@
             padding: 15px;
             border-radius: 10px;
             backdrop-filter: blur(10px);
-            max-width: 400px;
+            max-width: 350px;
+            font-size: 11px;
         }
         
         #stats {
             position: absolute;
-            top: 20px;
+            top: 120px;
             right: 20px;
             z-index: 100;
             background: rgba(0, 20, 10, 0.8);
             border: 1px solid #00ff88;
-            padding: 15px;
+            padding: 12px;
             border-radius: 10px;
             backdrop-filter: blur(10px);
+            max-width: 200px;
+            width: 180px;
         }
         
         h2 {
             margin-top: 0;
+            margin-bottom: 8px;
             color: #00ff88;
             text-shadow: 0 0 10px #00ff88;
+            font-size: 13px;
         }
         
         .metric {
-            margin: 5px 0;
-            font-size: 14px;
+            margin: 3px 0;
+            font-size: 11px;
+            line-height: 1.3;
         }
         
         .glow {
             text-shadow: 0 0 5px currentColor;
         }
+        
+        #video-info h2 {
+            font-size: 13px;
+        }
+        
+        #video-info p {
+            font-size: 11px;
+            margin: 5px 0;
+        }
     </style>
 </head>
 <body>
-    <div id="container"></div>
+    <div id="container">
+        <div id="animation-panel"></div>
+        <div id="video-panel">
+            <div id="video-info">
+                <h2>MISSION VIDEO SYNC</h2>
+                <p>Load your Vrishabha mission video to play synchronized with the 3D trajectory</p>
+            </div>
+            
+            <div id="video-container">
+                <video id="video-player" controls muted>
+                    <source src="" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+            
+            <div class="sync-controls">
+                <input type="file" id="video-file" accept="video/*" />
+                <div class="control-group">
+                    <label>Video Sync Offset (seconds): <span id="videoOffsetValue">0.0</span></label>
+                    <input type="range" id="videoOffset" min="-5.0" max="5.0" step="0.1" value="0.0">
+                </div>
+                <div class="control-group">
+                    <button onclick="syncPlay()">🎬 Sync Play Both</button>
+                    <button onclick="syncPause()">⏸️ Pause Both</button>
+                    <button onclick="resetSync()">🔄 Reset Both</button>
+                </div>
+            </div>
+        </div>
+    </div>
     
     <div id="controls">
         <h2>VRISHABHA MISSION CONTROL</h2>
@@ -163,6 +277,10 @@
         let timeWindow = 50;
         let playbackSpeed = 1.0;
         let trailOpacity = 0.7;
+        let videoOffset = 0.0;
+        let videoElement = null;
+        let animationStartTime = 0;
+        let lastFrameTime = 0;
         
         // Simulate point cloud data for 650 frames
         let simulatedFrames = [];
@@ -260,7 +378,7 @@
                     const dx = frame.position.x - prev.position.x;
                     const dy = frame.position.y - prev.position.y;
                     const dz = frame.position.z - prev.position.z;
-                    frame.velocity = Math.sqrt(dx*dx + dy*dy + dz*dz) * 60; // Assuming 60 FPS
+                    frame.velocity = Math.sqrt(dx*dx + dy*dy + dz*dz) * 6; // Assuming 6 FPS
                 }
                 
                 simulatedFrames.push(frame);
@@ -282,10 +400,10 @@
             
             // Create renderer
             renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setSize(window.innerWidth * 0.6, window.innerHeight);
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            document.getElementById('container').appendChild(renderer.domElement);
+            document.getElementById('animation-panel').appendChild(renderer.domElement);
             
             // Add lighting
             const ambientLight = new THREE.AmbientLight(0x404040, 0.3);
@@ -395,6 +513,27 @@
                 trailOpacity = parseFloat(e.target.value);
                 document.getElementById('opacityValue').textContent = trailOpacity.toFixed(1);
             });
+            
+            // Video controls
+            videoElement = document.getElementById('video-player');
+            
+            document.getElementById('video-file').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const url = URL.createObjectURL(file);
+                    videoElement.src = url;
+                    document.getElementById('video-info').innerHTML = `
+                        <h2>VIDEO LOADED</h2>
+                        <p>File: ${file.name}</p>
+                        <p>Ready for synchronized playback</p>
+                    `;
+                }
+            });
+            
+            document.getElementById('videoOffset').addEventListener('input', (e) => {
+                videoOffset = parseFloat(e.target.value);
+                document.getElementById('videoOffsetValue').textContent = videoOffset.toFixed(1);
+            });
         }
         
         function updateVisualization() {
@@ -499,9 +638,58 @@
             renderer.render(scene, camera);
         }
         
+        // Synchronization functions
+        function syncPlay() {
+            isPlaying = true;
+            if (videoElement && videoElement.src) {
+                // Calculate video time based on current frame (6 FPS)
+                const frameTime = currentFrame / 6;
+                const videoTime = Math.max(0, frameTime + videoOffset);
+                
+                if (videoTime < videoElement.duration) {
+                    videoElement.currentTime = videoTime;
+                    videoElement.play();
+                }
+            }
+            
+            // Update play button text
+            const playButton = document.querySelector('button[onclick="togglePlayback()"]');
+            if (playButton) {
+                playButton.textContent = '⏸️ Pause';
+            }
+        }
+        
+        function syncPause() {
+            isPlaying = false;
+            if (videoElement && videoElement.src) {
+                videoElement.pause();
+            }
+            
+            // Update play button text
+            const playButton = document.querySelector('button[onclick="togglePlayback()"]');
+            if (playButton) {
+                playButton.textContent = '▶️ Play';
+            }
+        }
+        
+        function resetSync() {
+            currentFrame = startFrameOffset;
+            isPlaying = false;
+            if (videoElement && videoElement.src) {
+                const frameTime = currentFrame / 6;
+                const videoTime = Math.max(0, frameTime + videoOffset);
+                videoElement.currentTime = videoTime;
+                videoElement.pause();
+            }
+        }
+        
         // Control functions
         function togglePlayback() {
-            isPlaying = !isPlaying;
+            if (isPlaying) {
+                syncPause();
+            } else {
+                syncPlay();
+            }
         }
         
         function resetView() {
@@ -538,9 +726,9 @@
         
         // Handle window resize
         window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.aspect = (window.innerWidth * 0.6) / window.innerHeight;
             camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setSize(window.innerWidth * 0.6, window.innerHeight);
         });
         
         // Initialize the application
