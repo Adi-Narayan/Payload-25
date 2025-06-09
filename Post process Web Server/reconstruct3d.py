@@ -9,6 +9,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import json
 from pathlib import Path
 import warnings
+import argparse
 
 @dataclass
 class Detection:
@@ -22,177 +23,83 @@ class Detection:
 class VrishabhaCubeAnalyzer:
     """Main class for analyzing Vrishabha cube tracking data"""
     
-    def __init__(self, data_path: str, camera_intrinsics: Dict = None):
+    def __init__(self, data_path: str, calibration_file: str = r"D:\Home\Desktop\Payload_2025_Research\depth_any\camera_calibration\calibration_results.json"):
         self.data_path = Path(data_path)
         self.detections = []
-        self.camera_intrinsics = camera_intrinsics or self.default_camera_params()
+        self.camera_intrinsics = self.load_camera_params(calibration_file)
         
         # Physical parameters
-        self.cube_size = 0.0175  # 17.5mm
+        self.cube_size = 0.0175  # 17.5mm cube edge length
         self.cube_mass = 0.042875  # 42.875g = 0.042875 kg
-        self.cube_weight = self.cube_mass * 9.81  # Weight in Newtons (0.421N)
-        
-        # Conical spring parameters (corrected)
-        self.spring_d1 = 0.01051    # small diameter (m) - 9mm
-        self.spring_d2 = 0.04051    # large diameter (m) - 39mm
-        self.wire_diameter = 0.0015  # 1.5mm wire diameter
-        self.spring_coils = 3     # active coils
-        self.shear_modulus = 81.37e9  # Pa (steel wire)
-
-        # Expected spring stiffness from document
-        self.expected_k_document = 0.77103  # N/m from document calculation
-        # Expected deflection from document: f = 19.08 × 10⁻³ m
-        self.expected_deflection = 0.01908  # m
-        
-        # Calculate conical spring constant
-        self.expected_k = self.calculate_conical_spring_constant()
-        self.expected_freq = self.expected_natural_frequency()
-
-
-        
-
-        
-        # Adjust filtering threshold based on expected deflection
-        self.displacement_threshold = self.expected_deflection * 0.1  # 10% of expected deflection
         
         self.valid_detections = []  # Track which detections have valid 3D poses
         
-    def default_camera_params(self):
-        """Default camera intrinsic parameters - scale corrected based on observed vs expected displacement"""
-        # Scale factor: observed 49mm vs expected 130mm ≈ 0.38
-        return {
-            'fx': 800 * 0.38, 'fy': 800 * 0.38,  # Scale-corrected focal lengths
-            'cx': 320, 'cy': 240,
-            'width': 640, 'height': 480
-        }
-        
-    def calculate_conical_spring_constant(self):
-        """Calculate spring constant for conical spring using proper formula"""
-        d = self.wire_diameter
-        D1 = self.spring_d1  
-        D2 = self.spring_d2
-        n = self.spring_coils
-        G = self.shear_modulus
-        
-        # Conical spring formula (simplified approximation)
-        # k = (G * d^4) / (8 * n) * (1/D1^3 + 1/D2^3)
-        k = (G * d**4) / (8 * n) * (1/D1**3 + 1/D2**3)
-        
-        print(f"Conical Spring Parameters (Updated):")
-        print(f"  Wire diameter: {d*1000:.2f}mm")
-        print(f"  Small diameter: {D1*1000:.2f}mm")
-        print(f"  Large diameter: {D2*1000:.2f}mm")
-        print(f"  Active coils: {n}")
-        print(f"  Calculated spring constant: {k:.5f} N/m")
-        print(f"  Document spring constant: {self.expected_k_document:.5f} N/m")
-        print(f"  Ratio (calculated/document): {k/self.expected_k_document:.3f}")
-        
-        return k
-
-
-    def expected_natural_frequency(self):
-        """Calculate expected natural frequency for the conical spring system"""
-        k = self.expected_k
-        m = self.cube_mass
-        omega_n = np.sqrt(k / m)  # rad/s
-        freq_hz = omega_n / (2 * np.pi)  # Hz
-        
-        # Also calculate using document spring constant
-        omega_n_doc = np.sqrt(self.expected_k_document / m)
-        freq_hz_doc = omega_n_doc / (2 * np.pi)
-        
-        print(f"Expected System Parameters:")
-        print(f"  Cube mass: {m*1000:.1f}g")
-        print(f"  Cube weight: {self.cube_weight:.3f}N")
-        print(f"  Expected natural frequency (code): {freq_hz:.2f} Hz")
-        print(f"  Expected natural frequency (document): {freq_hz_doc:.2f} Hz")
-        print(f"  Expected deflection (document): {self.expected_deflection*1000:.1f}mm")
-        print(f"  Expected max displacement: {self.cube_weight/k*1000:.1f}mm")
-        
-        return freq_hz
-        
-    def validate_scale(self):
-        """Check if estimated positions have reasonable scale"""
-        if not self.valid_detections:
-            return False
-            
-        positions = np.array([d.pose_3d[:3, 3] for d in self.valid_detections])
-        max_displacement = np.max(np.linalg.norm(positions - np.mean(positions, axis=0), axis=1))
-        
-        print(f"\nScale Validation:")
-        print(f"  Max displacement observed: {max_displacement*1000:.1f}mm")
-        print(f"  Expected deflection from document: {self.expected_deflection*1000:.1f}mm")
-        print(f"  Expected range for conical spring: {self.expected_deflection*500:.0f}-{self.expected_deflection*2000:.0f}mm")
-        
-        # Compare with document expectations
-        if max_displacement > self.expected_deflection * 10:  # 10x expected
-            print("  WARNING: Displacements much larger than expected - check camera calibration")
-            return False
-        elif max_displacement < self.expected_deflection * 0.1:  # 0.1x expected
-            print("  WARNING: Displacements much smaller than expected - cube may not be oscillating properly")
-            return False
-        else:
-            print("  Scale appears reasonable based on spring calculations")
-            return True
-        
-    def parse_detection_file(self, detection_file: str):
-        """Parse the YOLOv8 detection text file"""
-        detections = []
-        current_frame = -1
-        
+    def load_camera_params(self, calibration_file: str):
+        """Load camera intrinsic parameters from calibration_results.json"""
         try:
-            with open(detection_file, 'r') as f:
-                for line_num, line in enumerate(f, 1):
-                    line = line.strip()
-                    if not line:
-                        continue
-                        
-                    try:
-                        if line.startswith('--- Frame'):
-                            current_frame = int(line.split()[2])
-                        elif line.startswith('Detection'):
-                            # Parse: Detection 0: Confidence 0.8078, BBox (264.36, 184.25, 459.46, 446.12)
-                            parts = line.split(':')
-                            if len(parts) < 2:
-                                continue
-                                
-                            conf_bbox = parts[1].strip()
-                            
-                            # Extract confidence
-                            if 'Confidence' not in conf_bbox:
-                                continue
-                            conf_str = conf_bbox.split(',')[0].replace('Confidence', '').strip()
-                            confidence = float(conf_str)
-                            
-                            # Extract bbox
-                            if 'BBox' not in conf_bbox:
-                                continue
-                            bbox_str = conf_bbox.split('BBox')[1].strip()
-                            bbox_coords = bbox_str.replace('(', '').replace(')', '').split(',')
-                            
-                            if len(bbox_coords) != 4:
-                                continue
-                                
-                            bbox = tuple(float(x.strip()) for x in bbox_coords)
-                            
-                            detection = Detection(
-                                frame_id=current_frame,
-                                confidence=confidence,
-                                bbox=bbox
-                            )
-                            detections.append(detection)
-                            
-                    except (ValueError, IndexError) as e:
-                        print(f"Warning: Could not parse line {line_num}: {line}")
-                        continue
-                        
-        except FileNotFoundError:
-            print(f"Error: Detection file {detection_file} not found")
-            return []
+            with open(calibration_file, 'r') as f:
+                calibration_data = json.load(f)
             
-        self.detections = detections
-        print(f"Successfully parsed {len(detections)} detections")
-        return detections
+            camera_matrix = np.array(calibration_data['camera_matrix'], dtype=np.float32)
+            dist_coeffs = np.array(calibration_data['dist_coeff'][0], dtype=np.float32)
+            
+            intrinsics = {
+                'fx': camera_matrix[0, 0],
+                'fy': camera_matrix[1, 1],
+                'cx': camera_matrix[0, 2],
+                'cy': camera_matrix[1, 2],
+                'width': 640,  # Default image width
+                'height': 480,  # Default image height
+                'camera_matrix': camera_matrix,
+                'dist_coeffs': dist_coeffs
+            }
+            
+            print(f"Loaded camera calibration from {calibration_file}")
+            print(f"Camera matrix:\n{camera_matrix}")
+            print(f"Distortion coefficients: {dist_coeffs}")
+            
+            return intrinsics
+            
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Camera calibration file {calibration_file} not found. Please provide a valid calibration file.")
+        except KeyError as e:
+            raise KeyError(f"Missing key in calibration file: {e}")
+        except Exception as e:
+            raise Exception(f"Error loading camera calibration: {e}")
+        
+    def load_results_json(self, json_path: str, normalize_keypoints: bool = False, target_width: int = 640, target_height: int = 480):
+        """Load detection data from results.json with optional keypoint normalization"""
+        try:
+            with open(json_path, 'r') as f:
+                data = json.load(f)
+            self.detections = []
+            for item in data:
+                vertices_2d = [kp[:2] for kp in item['keypoints']]
+                # Log keypoints for debugging
+                print(f"Frame {item['frame']}: Keypoints = {vertices_2d}")
+                # Normalize keypoints if requested
+                if normalize_keypoints:
+                    max_x = max(kp[0] for kp in vertices_2d if kp[0] > 0)
+                    max_y = max(kp[1] for kp in vertices_2d if kp[1] > 0)
+                    if max_x > target_width or max_y > target_height:
+                        scale_x = target_width / max_x
+                        scale_y = target_height / max_y
+                        vertices_2d = [(kp[0] * scale_x, kp[1] * scale_y) for kp in vertices_2d]
+                        print(f"Frame {item['frame']}: Normalized keypoints by ({scale_x:.2f}, {scale_y:.2f}) to {vertices_2d}")
+                detection = Detection(
+                    frame_id=item['frame'],
+                    confidence=item['confidence'],
+                    bbox=tuple(item['bbox']),
+                    vertices_2d=vertices_2d
+                )
+                self.detections.append(detection)
+            print(f"Loaded {len(self.detections)} detections from {json_path}")
+        except FileNotFoundError:
+            print(f"Error: Results file {json_path} not found")
+            self.detections = []
+        except json.JSONDecodeError as e:
+            print(f"Error: Failed to decode JSON from {json_path}: {e}")
+            self.detections = []
     
     def load_frame_images(self, raw_frames_dir: str, pose_frames_dir: str):
         """Load corresponding raw and pose estimation frames"""
@@ -227,16 +134,64 @@ class VrishabhaCubeAnalyzer:
                 
         print(f"Loaded {loaded_raw} raw frames and {loaded_pose} pose frames")
     
-    def estimate_3d_pose_from_bbox(self, detection: Detection):
-        """Estimate 3D pose from 2D bounding box using PnP algorithm"""
-        x1, y1, x2, y2 = detection.bbox
+    def interpolate_pose(self, detection: Detection, detections: List[Detection], max_search: int = 5):
+        """Interpolate 3D pose from neighboring valid poses, searching up to max_search frames"""
+        idx = next((i for i, d in enumerate(detections) if d.frame_id == detection.frame_id), None)
+        if idx is None:
+            return None
         
-        # Validate bounding box
-        if x2 <= x1 or y2 <= y1:
-            print(f"Warning: Invalid bbox for frame {detection.frame_id}: {detection.bbox}")
+        # Search for previous valid pose
+        prev_det = None
+        for i in range(idx - 1, max(0, idx - max_search - 1), -1):
+            if detections[i].pose_3d is not None:
+                prev_det = detections[i]
+                break
+        
+        # Search for next valid pose
+        next_det = None
+        for i in range(idx + 1, min(len(detections), idx + max_search + 1)):
+            if detections[i].pose_3d is not None:
+                next_det = detections[i]
+                break
+        
+        if prev_det is None or next_det is None:
+            print(f"Cannot interpolate pose for frame {detection.frame_id}: insufficient valid neighbors")
+            return None
+        
+        prev_frame = prev_det.frame_id
+        next_frame = next_det.frame_id
+        curr_frame = detection.frame_id
+        
+        # Linear interpolation factor
+        t = (curr_frame - prev_frame) / (next_frame - prev_frame)
+        
+        # Interpolate translation
+        prev_t = prev_det.pose_3d[:3, 3]
+        next_t = next_det.pose_3d[:3, 3]
+        interp_t = (1 - t) * prev_t + t * next_t
+        
+        # Interpolate rotation using slerp (simplified to linear for small angles)
+        prev_R = prev_det.pose_3d[:3, :3]
+        next_R = next_det.pose_3d[:3, :3]
+        prev_rvec, _ = cv2.Rodrigues(prev_R)
+        next_rvec, _ = cv2.Rodrigues(next_R)
+        interp_rvec = (1 - t) * prev_rvec + t * next_rvec
+        interp_R, _ = cv2.Rodrigues(interp_rvec)
+        
+        # Construct interpolated transform
+        interp_pose = np.eye(4)
+        interp_pose[:3, :3] = interp_R
+        interp_pose[:3, 3] = interp_t
+        
+        return interp_pose
+    
+    def estimate_3d_pose(self, detection: Detection):
+        """Estimate 3D pose from keypoints using PnP algorithm with fallback"""
+        if detection.vertices_2d is None:
+            print(f"Warning: No vertices_2d for frame {detection.frame_id}")
             return detection
-            
-        # Define 3D cube vertices (assuming cube at origin)
+        
+        # Define 3D cube vertices (cube centered at origin)
         cube_3d_points = np.array([
             [-self.cube_size/2, -self.cube_size/2, -self.cube_size/2],  # vertex 0
             [self.cube_size/2, -self.cube_size/2, -self.cube_size/2],   # vertex 1
@@ -248,64 +203,71 @@ class VrishabhaCubeAnalyzer:
             [-self.cube_size/2, self.cube_size/2, self.cube_size/2],    # vertex 7
         ], dtype=np.float32)
         
-        # Improved 2D point estimation based on cube geometry
-        # Assume we're looking at the front face primarily
-        bbox_width = x2 - x1
-        bbox_height = y2 - y1
+        cube_2d_points = np.array(detection.vertices_2d, dtype=np.float32)
         
-        # Use perspective projection approximation for depth estimation
-        depth_offset = min(bbox_width, bbox_height) * 0.1  # More reasonable depth offset
+        # Filter valid points: non-zero and within image bounds
+        width, height = self.camera_intrinsics['width'], self.camera_intrinsics['height']
+        valid_idx = [
+            i for i in range(8)
+            if (cube_2d_points[i, 0] > 0 and cube_2d_points[i, 1] > 0 and
+                cube_2d_points[i, 0] < width and cube_2d_points[i, 1] < height)
+        ]
         
-        cube_2d_points = np.array([
-            [x1, y1],           # front bottom-left
-            [x2, y1],           # front bottom-right  
-            [x2, y2],           # front top-right
-            [x1, y2],           # front top-left
-            [x1 + depth_offset, y1 + depth_offset],  # back bottom-left (estimated)
-            [x2 + depth_offset, y1 + depth_offset],  # back bottom-right (estimated)
-            [x2 + depth_offset, y2 + depth_offset],  # back top-right (estimated)
-            [x1 + depth_offset, y2 + depth_offset],  # back top-left (estimated)
-        ], dtype=np.float32)
+        if len(valid_idx) < 6:
+            print(f"Warning: Only {len(valid_idx)} valid points for frame {detection.frame_id}. Invalid points: {[cube_2d_points[i].tolist() for i in range(8) if i not in valid_idx]}")
+            
+            # Attempt interpolation
+            interpolated_pose = self.interpolate_pose(detection, self.detections, max_search=5)
+            if interpolated_pose is not None:
+                detection.pose_3d = interpolated_pose
+                self.valid_detections.append(detection)
+                print(f"Interpolated pose for frame {detection.frame_id}")
+            return detection
         
-        # Camera matrix
-        camera_matrix = np.array([
-            [self.camera_intrinsics['fx'], 0, self.camera_intrinsics['cx']],
-            [0, self.camera_intrinsics['fy'], self.camera_intrinsics['cy']],
-            [0, 0, 1]
-        ], dtype=np.float32)
+        valid_3d = cube_3d_points[valid_idx]
+        valid_2d = cube_2d_points[valid_idx]
         
-        # Solve PnP to get rotation and translation
-        dist_coeffs = np.zeros((4,1))  # Assuming no distortion
+        # Use camera matrix and distortion coefficients from intrinsics
+        camera_matrix = self.camera_intrinsics['camera_matrix']
+        dist_coeffs = self.camera_intrinsics['dist_coeffs'].reshape(-1, 1)
         
         try:
             success, rvec, tvec = cv2.solvePnP(
-                cube_3d_points,
-                cube_2d_points,
+                valid_3d,
+                valid_2d,
                 camera_matrix,
                 dist_coeffs,
-                flags=cv2.SOLVEPNP_ITERATIVE  # More robust method
+                flags=cv2.SOLVEPNP_ITERATIVE
             )
             
             if success:
-                # Convert rotation vector to rotation matrix
                 rotation_matrix, _ = cv2.Rodrigues(rvec)
-                
-                # Create 4x4 transformation matrix
                 transform_matrix = np.eye(4)
                 transform_matrix[:3, :3] = rotation_matrix
                 transform_matrix[:3, 3] = tvec.flatten()
-                
                 detection.pose_3d = transform_matrix
                 self.valid_detections.append(detection)
                 
+                # Calculate reprojection error
+                projected_points, _ = cv2.projectPoints(valid_3d, rvec, tvec, camera_matrix, dist_coeffs)
+                reprojection_error = np.sqrt(np.sum((projected_points.squeeze() - valid_2d)**2, axis=1))
+                mean_error = np.mean(reprojection_error)
+                print(f"Frame {detection.frame_id}: Mean reprojection error = {mean_error:.2f} pixels")
+                if mean_error > 10:
+                    print(f"Warning: High reprojection error for frame {detection.frame_id}: {mean_error:.2f} pixels")
         except cv2.error as e:
             print(f"PnP solving failed for frame {detection.frame_id}: {e}")
-            
+            # Attempt interpolation
+            interpolated_pose = self.interpolate_pose(detection, self.detections, max_search=5)
+            if interpolated_pose is not None:
+                detection.pose_3d = interpolated_pose
+                self.valid_detections.append(detection)
+                print(f"Interpolated pose for frame {detection.frame_id}")
+        
         return detection
     
     def analyze_motion_patterns(self):
-        """Analyze cube motion patterns and spring dynamics"""
-        # Use only detections with valid 3D poses
+        """Analyze cube motion patterns from 3D positions"""
         valid_detections = [d for d in self.detections if d.pose_3d is not None]
         
         if len(valid_detections) < 2:
@@ -317,7 +279,6 @@ class VrishabhaCubeAnalyzer:
         confidences = []
         
         for detection in valid_detections:
-            # Extract position from transformation matrix
             position = detection.pose_3d[:3, 3]
             positions.append(position)
             timestamps.append(detection.frame_id)
@@ -326,20 +287,15 @@ class VrishabhaCubeAnalyzer:
         positions = np.array(positions)
         timestamps = np.array(timestamps)
         
-        # Calculate velocities and accelerations with proper time intervals
         if len(positions) > 2:
-            # Calculate time differences (assuming frame rate, adjust as needed)
-            dt = np.diff(timestamps) * (1.0/15.0) # Assuming 15 FPS, adjust as needed
-            dt[dt == 0] = 1.0/15.0 # Avoid division by zero
-            
-            # Calculate velocities
+            dt = np.diff(timestamps) * (1.0/15.0)  # Assuming 15 FPS
+            dt[dt == 0] = 1.0/15.0  # Avoid division by zero
             velocity_vectors = np.diff(positions, axis=0)
             velocities = velocity_vectors / dt[:, np.newaxis]
             
-            # Calculate accelerations
             if len(velocities) > 1:
                 acceleration_vectors = np.diff(velocities, axis=0)
-                dt_accel = dt[1:]  # Time intervals for acceleration
+                dt_accel = dt[1:]
                 accelerations = acceleration_vectors / dt_accel[:, np.newaxis]
             else:
                 accelerations = np.array([])
@@ -363,13 +319,11 @@ class VrishabhaCubeAnalyzer:
         positions = motion_data['positions']
         confidences = motion_data['confidences']
         
-        # Color-code trajectory by confidence
         scatter = ax.scatter(
             positions[:, 0], positions[:, 1], positions[:, 2],
             c=confidences, cmap='viridis', s=50, alpha=0.7
         )
         
-        # Plot trajectory line
         ax.plot(positions[:, 0], positions[:, 1], positions[:, 2], 
                 'r-', alpha=0.5, linewidth=2)
         
@@ -378,150 +332,36 @@ class VrishabhaCubeAnalyzer:
         ax.set_zlabel('Z Position (m)')
         ax.set_title(f'Vrishabha Cube 3D Trajectory ({motion_data["valid_frames"]} frames)')
         
-        # Add colorbar for confidence
         plt.colorbar(scatter, label='Detection Confidence')
         
         return fig
     
-    def simulate_spring_physics(self, motion_data):
-        """Simulate spring dynamics based on observed motion - corrected for conical spring"""
-        positions = motion_data['positions']
-        
-        if len(positions) < 3:
-            print("Warning: Not enough data points for spring physics simulation")
-            return None
-        
-        accelerations = motion_data.get('accelerations', np.array([]))
-        if len(accelerations) == 0:
-            print("Warning: No acceleration data available")
-            return None
-        
-        # Center positions around mean
-        mean_position = np.mean(positions, axis=0)
-        displacements = positions[2:] - mean_position  # Align with accelerations
-        
-        # Estimate spring parameters using least squares
-        spring_constants = []
-        valid_axes = []
-        
-        for axis in range(3):
-            # Filter out small displacements - adjusted threshold for conical spring
-            non_zero_mask = np.abs(displacements[:, axis]) > self.displacement_threshold
-            
-            if np.sum(non_zero_mask) >= 10:  # Need at least 10 points
-                disp_filtered = displacements[non_zero_mask, axis]
-                accel_filtered = accelerations[non_zero_mask, axis]
-                
-                # Linear regression: a = -(k/m)*x for spring-mass system
-                try:
-                    # Calculate k/m ratio
-                    k_over_m = -np.mean(accel_filtered / disp_filtered)
-                    k_estimated = k_over_m * self.cube_mass
-                    
-                    if k_estimated > 0:  # Spring constant should be positive
-                        spring_constants.append(k_estimated)
-                        valid_axes.append(axis)
-                        print(f"  Axis {axis}: k = {k_estimated:.2f} N/m")
-                except (ValueError, RuntimeWarning, ZeroDivisionError):
-                    print(f"  Axis {axis}: Could not estimate spring constant")
-                    continue
-            else:
-                print(f"  Axis {axis}: Insufficient data points ({np.sum(non_zero_mask)})")
-        
-        if len(spring_constants) == 0:
-            print("Warning: Could not estimate spring constants - try adjusting displacement threshold")
-            print(f"Current threshold: {self.displacement_threshold*1000:.1f}mm")
-            print(f"Max displacement observed: {np.max(np.abs(displacements))*1000:.1f}mm")
-            return None
-        
-        avg_spring_constant = np.mean(spring_constants)
-        measured_freq = np.sqrt(avg_spring_constant / self.cube_mass) / (2 * np.pi)
-        
-        print(f"\nSpring Analysis Results:")
-        print(f"  Measured spring constants: {spring_constants}")
-        print(f"  Average measured k: {avg_spring_constant:.2f} N/m")
-        print(f"  Expected k (conical): {self.expected_k:.2f} N/m")
-        print(f"  Ratio (measured/expected): {avg_spring_constant/self.expected_k:.2f}")
-        print(f"  Measured natural frequency: {measured_freq:.2f} Hz")
-        print(f"  Expected natural frequency: {self.expected_freq:.2f} Hz")
-        
-        return {
-            'spring_constants': spring_constants,
-            'valid_axes': valid_axes,
-            'avg_spring_constant': avg_spring_constant,
-            'expected_spring_constant': self.expected_k,
-            'natural_frequency': measured_freq,
-            'expected_frequency': self.expected_freq,
-            'damping_estimate': self.estimate_damping(positions),
-            'analysis_quality': len(spring_constants) / 3.0,  # 0-1 quality score
-            'measurement_ratio': avg_spring_constant / self.expected_k
-        }
-    
-    def estimate_damping(self, positions):
-        """Estimate damping coefficient from position decay"""
-        # Calculate amplitude decay analysis
-        mean_position = np.mean(positions, axis=0)
-        amplitudes = np.linalg.norm(positions - mean_position, axis=1)
-        
-        if len(amplitudes) < 10:
-            return 0.1  # Default damping for insufficient data
-        
-        # Remove zero amplitudes for log calculation
-        non_zero_amplitudes = amplitudes[amplitudes > 1e-6]
-        
-        if len(non_zero_amplitudes) < 5:
-            return 0.1
-        
-        try:
-            # Fit exponential decay: A(t) = A0 * exp(-damping * t)
-            t = np.arange(len(non_zero_amplitudes))
-            log_amplitudes = np.log(non_zero_amplitudes)
-            
-            # Linear fit to log(amplitude) vs time
-            coeffs = np.polyfit(t, log_amplitudes, 1)
-            damping = -coeffs[0]  # Decay rate
-            
-            # Clamp to reasonable range
-            return max(0.001, min(1.0, damping))
-            
-        except (np.linalg.LinAlgError, ValueError, RuntimeWarning):
-            return 0.1  # Default damping on fitting failure
-
     def generate_point_cloud(self, frame_id: int):
-        """Generate point cloud from depth estimation (placeholder)"""
-        # This would integrate with your Depth-Anything-V2 results
-        # For now, create a synthetic point cloud around the cube
-        
+        """Generate point cloud from depth estimation"""
         detection = next((d for d in self.detections if d.frame_id == frame_id), None)
         if not detection or detection.pose_3d is None:
             return None
         
-        # Create point cloud around estimated cube position
         center = detection.pose_3d[:3, 3]
         
-        # Generate random points around the cube with realistic noise
         n_points = 1000
-        # Use cube size to determine point cloud extent
         noise_scale = self.cube_size * 0.4
         points = np.random.normal(center, noise_scale, (n_points, 3))
         
-        # Create Open3D point cloud
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(points)
         
-        # Color based on distance from center
         distances = np.linalg.norm(points - center, axis=1)
         colors = plt.cm.viridis(distances / np.max(distances))[:, :3]
         pcd.colors = o3d.utility.Vector3dVector(colors)
         
         return pcd
-    
+
     def export_results(self, output_dir: str):
         """Export analysis results"""
         output_path = Path(output_dir)
         output_path.mkdir(exist_ok=True)
         
-        # Export detections with 3D poses
         results = []
         valid_count = 0
         
@@ -536,22 +376,28 @@ class VrishabhaCubeAnalyzer:
             if detection.pose_3d is not None:
                 valid_count += 1
         
-        # Export main results
         with open(output_path / 'analysis_results.json', 'w') as f:
             json.dump(results, f, indent=2)
         
-        # Export summary statistics
+        # Convert NumPy arrays and types in camera_intrinsics to native Python types for JSON serialization
+        serializable_intrinsics = {}
+        for k, v in self.camera_intrinsics.items():
+            if isinstance(v, np.ndarray):
+                serializable_intrinsics[k] = v.tolist()
+            elif isinstance(v, (np.float32, np.float64)):
+                serializable_intrinsics[k] = float(v)
+            elif isinstance(v, (np.int32, np.int64)):
+                serializable_intrinsics[k] = int(v)
+            else:
+                serializable_intrinsics[k] = v
+        
         summary = {
             'total_detections': len(self.detections),
             'valid_3d_poses': valid_count,
             'success_rate': valid_count / len(self.detections) if self.detections else 0,
             'cube_size': self.cube_size,
             'cube_mass': self.cube_mass,
-            'cube_weight': self.cube_weight,
-            'expected_spring_constant': self.expected_k,
-            'expected_natural_frequency': self.expected_freq,
-            'camera_intrinsics': self.camera_intrinsics,
-            'displacement_threshold': self.displacement_threshold
+            'camera_intrinsics': serializable_intrinsics
         }
         
         with open(output_path / 'analysis_summary.json', 'w') as f:
@@ -560,65 +406,54 @@ class VrishabhaCubeAnalyzer:
         print(f"Results exported to {output_path}")
         print(f"Successfully processed {valid_count}/{len(self.detections)} detections")
 
-# Example usage
 def main():
-    # Initialize analyzer
-    analyzer = VrishabhaCubeAnalyzer("./vrishabha_data")
+    parser = argparse.ArgumentParser(description="Vrishabha Cube 3D Reconstruction")
+    parser.add_argument('--results-json', default=r"D:\Home\Desktop\Payload_2025_Research\depth_any\output_detections\results.json", help="Path to results.json")
+    parser.add_argument('--calibration-file', default=r"D:\Home\Desktop\Payload_2025_Research\depth_any\camera_calibration\calibration_results.json", help="Path to calibration_results.json")
+    parser.add_argument('--normalize-keypoints', action='store_true', help="Normalize keypoints to 640x480")
+    args = parser.parse_args()
+
+    try:
+        analyzer = VrishabhaCubeAnalyzer("./vrishabha_data", args.calibration_file)
+    except Exception as e:
+        print(f"Failed to initialize analyzer: {e}")
+        return
+
+    analyzer.load_results_json(args.results_json, normalize_keypoints=args.normalize_keypoints)
     
-    # Parse detection file
-    detections = analyzer.parse_detection_file("pose_estimation_log.txt")
-    
-    if not detections:
-        print("No detections found. Check your detection file path and format.")
+    if not analyzer.detections:
+        print("No detections found. Check your results.json path and format.")
         return
     
-    # Load frame images
     analyzer.load_frame_images(
-        r"D:\Home\Desktop\Payload_2025_Research\depth_any\Raw_Camera\Raw_Camera_Output", 
+        r"D:\Home\Desktop\Payload_2025_Research\depth_any\aryan\Raw_Camera_Output", 
         r"D:\Home\Desktop\Payload_2025_Research\depth_any\pose_frame\pose_frames"
     )
     
-    # Estimate 3D poses for all detections
     print("Estimating 3D poses...")
     for detection in analyzer.detections:
-        analyzer.estimate_3d_pose_from_bbox(detection)
+        analyzer.estimate_3d_pose(detection)
     
-    # Validate scale
-    print("Validating measurement scale...")
-    analyzer.validate_scale()
-    
-    # Analyze motion patterns
     print("Analyzing motion patterns...")
     motion_data = analyzer.analyze_motion_patterns()
     
     if motion_data:
         print(f"Motion analysis complete. Valid frames: {motion_data['valid_frames']}")
         
-        # Create visualization
         try:
             fig = analyzer.create_3d_visualization(motion_data)
             plt.show()
         except Exception as e:
             print(f"Visualization failed: {e}")
         
-        # Simulate physics
-        print("Simulating spring physics...")
-        physics_data = analyzer.simulate_spring_physics(motion_data)
-        if physics_data:
-            print(f"Analysis quality: {physics_data['analysis_quality']:.2f}")
-        
-        # Generate point clouds for first few frames
         print("Generating point clouds...")
         for i in range(min(3, len(analyzer.valid_detections))):
             pcd = analyzer.generate_point_cloud(analyzer.valid_detections[i].frame_id)
             if pcd:
                 print(f"Generated point cloud for frame {analyzer.valid_detections[i].frame_id}")
-                # Uncomment to visualize
-                # o3d.visualization.draw_geometries([pcd])
     else:
         print("Motion analysis failed - insufficient valid detections")
     
-    # Export results
     print("Exporting results...")
     analyzer.export_results("./output")
 
