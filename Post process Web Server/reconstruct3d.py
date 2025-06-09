@@ -36,7 +36,7 @@ class VrishabhaCubeAnalyzer:
         }
     
     def parse_detection_file(self, detection_file: str):
-        """Parse the YOLOv8 detection text file"""
+        """Parse the YOLOv11 detection text file"""
         detections = []
         current_frame = -1
         
