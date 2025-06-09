@@ -682,7 +682,7 @@ if __name__ == "__main__":
     try:
         processed_data = process_vrishabha_data_improved(
             DATA_FOLDER, 
-            max_files=200, 
+            max_files=674, 
             start_from=0
         )
         
