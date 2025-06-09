@@ -1,7 +1,7 @@
 """
 1.Run yolov8_pose_estimation.py to get detections.txt in output_detections
 2.Run parse_detections.py in output_detections to get results.json
-3.Run reconstruct3d_1.py, which uses results.json and calibration_results.json to generate analysis_results.json and analysis_summary.json
+3.Run reconstruct3d.py, which uses results.json and calibration_results.json to generate analysis_results.json and analysis_summary.json
 4.Run web_server.py for animation, which uses these 2 output json files. Open debug_vrishabha.html using localhost address provided on prompt on running web_server.py
 """
 
