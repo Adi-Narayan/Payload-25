@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CANSAT Mission Control Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            color: #00ffff;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            grid-template-rows: auto 1fr auto;
+            height: 100vh;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        .header {
+            grid-column: 1 / -1;
+            background: rgba(0, 255, 255, 0.1);
+            border: 1px solid #00ffff;
+            border-radius: 10px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+            text-align: center;
+        }
+
+        .mission-title {
+            font-size: 24px;
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+            margin-bottom: 5px;
+        }
+
+        .mission-status {
+            font-size: 14px;
+            color: #ff6b6b;
+            animation: pulse 2s infinite;
+        }
+
+        .main-display {
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid #00ffff;
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .control-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .telemetry-box {
+            background: rgba(0, 255, 255, 0.05);
+            border: 1px solid #00ffff;
+            border-radius: 10px;
+            padding: 15px;
+            backdrop-filter: blur(5px);
+        }
+
+        .telemetry-title {
+            color: #00ffff;
+            font-size: 16px;
+            margin-bottom: 10px;
+            text-align: center;
+            text-shadow: 0 0 5px #00ffff;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            font-size: 12px;
+        }
+
+        .data-label {
+            color: #ffffff;
+        }
+
+        .data-value {
+            color: #00ff00;
+            font-weight: bold;
+        }
+
+        .phase-indicator {
+            padding: 20px;
+            text-align: center;
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid #ff6b6b;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .phase-title {
+            font-size: 18px;
+            color: #ff6b6b;
+            margin-bottom: 10px;
+        }
+
+        .phase-progress {
+            width: 100%;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .phase-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b, #ffd93d);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        .controls {
+            grid-column: 1 / -1;
+            background: rgba(0, 255, 255, 0.1);
+            border: 1px solid #00ffff;
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .control-btn {
+            background: rgba(0, 255, 255, 0.2);
+            border: 1px solid #00ffff;
+            color: #00ffff;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Courier New', monospace;
+        }
+
+        .control-btn:hover {
+            background: rgba(0, 255, 255, 0.4);
+            box-shadow: 0 0 10px #00ffff;
+        }
+
+        .control-btn.active {
+            background: rgba(0, 255, 255, 0.6);
+            box-shadow: 0 0 15px #00ffff;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .quaternion-display {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .quat-component {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px;
+            border-radius: 5px;
+            text-align: center;
+            border: 1px solid #00ffff;
+        }
+
+        .orientation-visual {
+            width: 100%;
+            height: 100px;
+            background: radial-gradient(circle, rgba(0,255,255,0.1) 0%, rgba(0,0,0,0.5) 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 0 10px currentColor;
+            margin: 10px 0;
+        }
+
+        .upright { color: #00ff00; }
+        .inverted { color: #ff0000; }
+        .side { color: #ffd93d; }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .hud-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #00ffff;
+            font-size: 12px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <div class="mission-title">🚀 CANSAT MISSION CONTROL</div>
+            <div class="mission-status">● LIVE TELEMETRY ACTIVE</div>
+        </div>
+
+        <div class="main-display">
+            <div id="canvas-container">
+                <div class="hud-overlay">
+                    <div>ALT: <span id="altitude">0</span></div>
+                    <div>VEL: <span id="velocity">0</span></div>
+                    <div>TIME: <span id="mission-time">T+00:00</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-panel">
+            <div class="phase-indicator">
+                <div class="phase-title" id="current-phase">STANDBY</div>
+                <div class="phase-progress">
+                    <div class="phase-progress-bar" id="phase-progress" style="width: 0%"></div>
+                </div>
+                <div id="phase-time">T+00:00</div>
+            </div>
+
+            <div class="telemetry-box">
+                <div class="telemetry-title">ORIENTATION DATA</div>
+                <div class="quaternion-display">
+                    <div class="quat-component">W: <span id="quat-w">1.000</span></div>
+                    <div class="quat-component">X: <span id="quat-x">0.000</span></div>
+                    <div class="quat-component">Y: <span id="quat-y">0.000</span></div>
+                    <div class="quat-component">Z: <span id="quat-z">0.000</span></div>
+                </div>
+                <div class="orientation-visual upright" id="orientation-status">UPRIGHT</div>
+            </div>
+
+            <div class="telemetry-box">
+                <div class="telemetry-title">ACCELERATION</div>
+                <div class="data-row">
+                    <span class="data-label">X-AXIS:</span>
+                    <span class="data-value" id="accel-x">0.000 g</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Y-AXIS:</span>
+                    <span class="data-value" id="accel-y">0.000 g</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Z-AXIS:</span>
+                    <span class="data-value" id="accel-z">0.000 g</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">TOTAL:</span>
+                    <span class="data-value" id="accel-total">0.000 g</span>
+                </div>
+            </div>
+
+            <div class="telemetry-box">
+                <div class="telemetry-title">FLIGHT STATS</div>
+                <div class="data-row">
+                    <span class="data-label">MAX ALT:</span>
+                    <span class="data-value" id="max-alt">0</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">MAX G:</span>
+                    <span class="data-value" id="max-g">0.0 g</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">DISTANCE:</span>
+                    <span class="data-value" id="distance">0 km</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn" id="play-btn">▶ PLAY</button>
+            <button class="control-btn" id="pause-btn">⏸ PAUSE</button>
+            <button class="control-btn" id="reset-btn">🔄 RESET</button>
+            <button class="control-btn" id="speed-btn">⚡ 1x SPEED</button>
+            <button class="control-btn" id="view-btn">📷 TRACK VIEW</button>
+        </div>
+    </div>
+
+    <script>
+      // Global variables
+let scene, camera, renderer, cansat, trajectory, earth;
+let flightData = [];
+let orientationData = [];
+let processedFlightData = [];
+let currentFrame = 0;
+let maxFrames = 0;
+let isPlaying = false;
+let playbackSpeed = 1;
+let cameraMode = 'free';
+let maxAltitude = 0;
+let maxG = 0;
+let startTime;
+
+// Initialize the 3D scene
+function initScene() {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x000011);
+
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
+    camera.position.set(50, 50, 50);
+    camera.lookAt(0, 0, 0);
+
+    const container = document.getElementById('canvas-container');
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+    scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(100, 100, 50);
+    directionalLight.castShadow = true;
+    scene.add(directionalLight);
+
+    const earthGeometry = new THREE.PlaneGeometry(2000, 2000);
+    const earthMaterial = new THREE.MeshLambertMaterial({ 
+        color: 0x2d5a27,
+        transparent: true,
+        opacity: 0.8
+    });
+    earth = new THREE.Mesh(earthGeometry, earthMaterial);
+    earth.rotation.x = -Math.PI / 2;
+    earth.receiveShadow = true;
+    scene.add(earth);
+
+    const gridHelper = new THREE.GridHelper(2000, 40, 0x00ffff, 0x444444);
+    scene.add(gridHelper);
+
+    createCansat();
+    createTrajectory();
+    addMouseControls();
+}
+
+function createCansat() {
+    const cansatGroup = new THREE.Group();
+
+    // Main body (cylinder)
+    const bodyGeometry = new THREE.CylinderGeometry(1, 1, 4, 8);
+    const bodyMaterial = new THREE.MeshPhongMaterial({ color: 0x00ffff });
+    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+    body.castShadow = true;
+    cansatGroup.add(body);
+
+    // Nose cone
+    const noseGeometry = new THREE.ConeGeometry(1, 1.5, 8);
+    const noseMaterial = new THREE.MeshPhongMaterial({ color: 0xff6b6b });
+    const nose = new THREE.Mesh(noseGeometry, noseMaterial);
+    nose.position.y = 2.75;
+    nose.castShadow = true;
+    cansatGroup.add(nose);
+
+    // Fins
+    for (let i = 0; i < 4; i++) {
+        const finGeometry = new THREE.BoxGeometry(0.1, 2, 1);
+        const finMaterial = new THREE.MeshPhongMaterial({ color: 0xffd93d });
+        const fin = new THREE.Mesh(finGeometry, finMaterial);
+        fin.position.x = Math.cos(i * Math.PI / 2) * 1.2;
+        fin.position.z = Math.sin(i * Math.PI / 2) * 1.2;
+        fin.position.y = -1;
+        fin.castShadow = true;
+        cansatGroup.add(fin);
+    }
+
+    // Coordinate axes for orientation reference
+    const axesHelper = new THREE.AxesHelper(3);
+    cansatGroup.add(axesHelper);
+
+    cansat = cansatGroup;
+    scene.add(cansat);
+}
+
+function createTrajectory() {
+    const material = new THREE.LineBasicMaterial({ color: 0x00ff00, linewidth: 2 });
+    const geometry = new THREE.BufferGeometry();
+    trajectory = new THREE.Line(geometry, material);
+    scene.add(trajectory);
+}
+
+function addMouseControls() {
+    let mouseDown = false;
+    let mouseX = 0;
+    let mouseY = 0;
+
+    renderer.domElement.addEventListener('mousedown', (event) => {
+        mouseDown = true;
+        mouseX = event.clientX;
+        mouseY = event.clientY;
+    });
+
+    renderer.domElement.addEventListener('mouseup', () => {
+        mouseDown = false;
+    });
+
+    renderer.domElement.addEventListener('mousemove', (event) => {
+        if (!mouseDown || cameraMode === 'track') return;
+
+        const deltaX = event.clientX - mouseX;
+        const deltaY = event.clientY - mouseY;
+
+        const spherical = new THREE.Spherical();
+        spherical.setFromVector3(camera.position);
+        spherical.theta -= deltaX * 0.01;
+        spherical.phi += deltaY * 0.01;
+        spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
+
+        camera.position.setFromSpherical(spherical);
+        camera.lookAt(0, 0, 0);
+
+        mouseX = event.clientX;
+        mouseY = event.clientY;
+    });
+
+    renderer.domElement.addEventListener('wheel', (event) => {
+        if (cameraMode === 'track') return;
+        const scale = event.deltaY > 0 ? 1.1 : 0.9;
+        camera.position.multiplyScalar(scale);
+    });
+}
+
+// Convert timestamp to seconds
+function timestampToSeconds(timestamp) {
+    const parts = timestamp.split(':');
+    if (parts.length === 2) {
+        const [minutes, seconds] = parts;
+        return parseFloat(minutes) * 60 + parseFloat(seconds);
+    }
+    return 0;
+}
+
+// Smooth data using moving average
+function smoothData(data, windowSize = 5) {
+    const smoothed = [];
+    for (let i = 0; i < data.length; i++) {
+        let sum = 0;
+        let count = 0;
+        for (let j = Math.max(0, i - windowSize); j <= Math.min(data.length - 1, i + windowSize); j++) {
+            sum += data[j];
+            count++;
+        }
+        smoothed.push(sum / count);
+    }
+    return smoothed;
+}
+
+// Detect flight phase based on acceleration patterns
+function detectFlightPhase(accelData, index) {
+    const totalAccel = Math.sqrt(accelData.accelX**2 + accelData.accelY**2 + accelData.accelZ**2);
+    const verticalAccel = accelData.accelZ;
+    
+    // Launch phase: high acceleration
+    if (totalAccel > 2.0) {
+        return { name: 'LAUNCH', color: '#ff6b6b' };
+    }
+    // Boost phase: moderate acceleration
+    else if (totalAccel > 1.5) {
+        return { name: 'BOOST', color: '#ffd93d' };
+    }
+    // Free fall/coast: low acceleration, mostly gravity
+    else if (Math.abs(verticalAccel + 1) < 0.5 && totalAccel < 1.5) {
+        return { name: 'COAST', color: '#4ecdc4' };
+    }
+    // Apogee: very low acceleration
+    else if (totalAccel < 0.5) {
+        return { name: 'APOGEE', color: '#45b7d1' };
+    }
+    // Descent: increasing downward acceleration
+    else if (verticalAccel < -1.2) {
+        return { name: 'DESCENT', color: '#96ceb4' };
+    }
+    // Landing: high impact acceleration
+    else if (totalAccel > 3.0 && index > flightData.length * 0.8) {
+        return { name: 'LANDING', color: '#ffeaa7' };
+    }
+    else {
+        return { name: 'FLIGHT', color: '#4ecdc4' };
+    }
+}
+
+// Process flight data to calculate position and velocity
+function processFlightData() {
+    if (flightData.length === 0) return;
+    
+    processedFlightData = [];
+    let position = { x: 0, y: 0, z: 0 };
+    let velocity = { x: 0, y: 0, z: 0 };
+    let lastTime = 0;
+    
+    // Smooth acceleration data to reduce noise
+    const smoothedAccelX = smoothData(flightData.map(d => d.accelX));
+    const smoothedAccelY = smoothData(flightData.map(d => d.accelY));
+    const smoothedAccelZ = smoothData(flightData.map(d => d.accelZ));
+    
+    for (let i = 0; i < flightData.length; i++) {
+        const currentTime = timestampToSeconds(flightData[i].timestamp);
+        const dt = i === 0 ? 0.1 : currentTime - lastTime;
+        
+        // Use smoothed acceleration data
+        const accelX = smoothedAccelX[i] * 9.81; // Convert g to m/s²
+        const accelY = smoothedAccelY[i] * 9.81;
+        const accelZ = (smoothedAccelZ[i] + 1) * 9.81; // Add 1g to compensate for gravity
+        
+        // Integrate acceleration to get velocity
+        velocity.x += accelX * dt;
+        velocity.y += accelY * dt;
+        velocity.z += accelZ * dt;
+        
+        // Integrate velocity to get position
+        position.x += velocity.x * dt;
+        position.y += velocity.y * dt;
+        position.z += velocity.z * dt;
+        
+        // Ensure altitude doesn't go below ground
+        if (position.z < 0) {
+            position.z = 0;
+            velocity.z = 0;
+        }
+        
+        const totalAccel = Math.sqrt(accelX**2 + accelY**2 + accelZ**2) / 9.81;
+        const phase = detectFlightPhase({
+            accelX: smoothedAccelX[i],
+            accelY: smoothedAccelY[i], 
+            accelZ: smoothedAccelZ[i]
+        }, i);
+        
+        processedFlightData.push({
+            timestamp: flightData[i].timestamp,
+            time: currentTime,
+            accelX: smoothedAccelX[i],
+            accelY: smoothedAccelY[i],
+            accelZ: smoothedAccelZ[i],
+            velocityX: velocity.x,
+            velocityY: velocity.y,
+            velocityZ: velocity.z,
+            positionX: position.x,
+            positionY: position.y,
+            positionZ: position.z,
+            altitude: position.z,
+            totalAccel: totalAccel,
+            totalVelocity: Math.sqrt(velocity.x**2 + velocity.y**2 + velocity.z**2),
+            phase: phase
+        });
+        
+        lastTime = currentTime;
+    }
+    
+    // Calculate max values
+    maxAltitude = Math.max(...processedFlightData.map(d => d.altitude));
+    maxG = Math.max(...processedFlightData.map(d => d.totalAccel));
+    
+    console.log(`📊 Processed ${processedFlightData.length} data points`);
+    console.log(`🎯 Max altitude: ${maxAltitude.toFixed(1)} m`);
+    console.log(`⚡ Max G-force: ${maxG.toFixed(1)} g`);
+}
+
+function updateVisualization() {
+    if (!processedFlightData.length || !orientationData.length) {
+        console.log('Waiting for processed flight and orientation data');
+        return;
+    }
+    
+    if (currentFrame >= maxFrames) {
+        console.log('Reached end of data');
+        isPlaying = false;
+        const playBtn = document.getElementById('play-btn');
+        if (playBtn) playBtn.classList.remove('active');
+        return;
+    }
+
+    const frameIndex = Math.floor(currentFrame);
+    const currentData = processedFlightData[frameIndex];
+    const currentOrientation = orientationData[frameIndex];
+
+    if (!currentData || !currentOrientation) {
+        console.error('Invalid data at frame', frameIndex);
+        return;
+    }
+
+    // Scale position for visualization (1m = 1 unit)
+    cansat.position.set(
+        currentData.positionX,
+        currentData.positionZ, // Z is up in visualization
+        currentData.positionY
+    );
+
+    // Apply quaternion rotation
+    const q = new THREE.Quaternion(
+        currentOrientation.quaternionX,
+        currentOrientation.quaternionY,
+        currentOrientation.quaternionZ,
+        currentOrientation.quaternionW
+    );
+    cansat.setRotationFromQuaternion(q);
+
+    // Update trajectory
+    const trajectoryPoints = [];
+    for (let i = 0; i <= currentFrame; i += Math.max(1, Math.floor(currentFrame / 100))) {
+        const data = processedFlightData[i];
+        if (data) {
+            trajectoryPoints.push(new THREE.Vector3(data.positionX, data.positionZ, data.positionY));
+        }
+    }
+    trajectory.geometry.setFromPoints(trajectoryPoints);
+
+    // Camera tracking
+    if (cameraMode === 'track') {
+        camera.position.set(
+            currentData.positionX + 30,
+            currentData.positionZ + 20,
+            currentData.positionY + 30
+        );
+        camera.lookAt(currentData.positionX, currentData.positionZ, currentData.positionY);
+    }
+
+    updateTelemetry(currentData, currentOrientation);
+    renderer.render(scene, camera);
+}
+
+function updateTelemetry(currentData, currentOrientation) {
+    if (!currentData || !currentOrientation) {
+        console.error('Invalid telemetry data');
+        return;
+    }
+
+    // Quaternion data
+    document.getElementById('quat-w').textContent = (currentOrientation.quaternionW || 0).toFixed(3);
+    document.getElementById('quat-x').textContent = (currentOrientation.quaternionX || 0).toFixed(3);
+    document.getElementById('quat-y').textContent = (currentOrientation.quaternionY || 0).toFixed(3);
+    document.getElementById('quat-z').textContent = (currentOrientation.quaternionZ || 0).toFixed(3);
+
+    // Orientation status
+    const orientationElement = document.getElementById('orientation-status');
+    orientationElement.textContent = currentOrientation.orientation || 'Unknown';
+    orientationElement.className = 'orientation-visual ' + 
+        (currentOrientation.orientation === 'Upright' ? 'upright' : 
+         currentOrientation.orientation === 'Inverted' ? 'inverted' : 'side');
+
+    // Acceleration data
+    document.getElementById('accel-x').textContent = (currentData.accelX || 0).toFixed(3) + ' g';
+    document.getElementById('accel-y').textContent = (currentData.accelY || 0).toFixed(3) + ' g';
+    document.getElementById('accel-z').textContent = (currentData.accelZ || 0).toFixed(3) + ' g';
+    document.getElementById('accel-total').textContent = (currentData.totalAccel || 0).toFixed(3) + ' g';
+    
+// Flight data - Update HUD overlay elements
+    document.getElementById('altitude').textContent = Math.round(currentData.altitude) + ' m';
+    document.getElementById('velocity').textContent = Math.round(currentData.totalVelocity) + ' m/s';
+    document.getElementById('mission-time').textContent = currentData.timestamp || '00:00:00';
+    // Flight phase
+    document.getElementById('current-phase').textContent = currentData.phase.name;
+    document.getElementById('phase-time').textContent = currentData.timestamp || '00:00:00';
+
+    // Progress bar
+    const progress = maxFrames ? (currentFrame / maxFrames) * 100 : 0;
+    document.getElementById('phase-progress').style.width = progress + '%';
+    document.getElementById('phase-progress').style.backgroundColor = currentData.phase.color;
+
+    // Max values
+    document.getElementById('max-alt').textContent = Math.round(maxAltitude) + ' m';
+    document.getElementById('max-g').textContent = maxG.toFixed(1) + ' g';
+    
+    // Calculate downrange distance
+    const distance = Math.sqrt(currentData.positionX**2 + currentData.positionY**2) / 1000;
+    document.getElementById('distance').textContent = distance.toFixed(2) + ' km';
+}
+
+function animate() {
+    if (!isPlaying || currentFrame >= maxFrames) {
+        isPlaying = false;
+        const playBtn = document.getElementById('play-btn');
+        if (playBtn) playBtn.classList.remove('active');
+        return;
+    }
+
+    updateVisualization();
+    currentFrame += playbackSpeed;
+    requestAnimationFrame(animate);
+}
+
+function setupControls() {
+    const controlsDiv = document.querySelector('.controls');
+    controlsDiv.innerHTML = '';
+    controlsDiv.innerHTML = `
+        <input type="file" id="csv-upload" accept=".csv" multiple style="display: none;">
+        <button id="load-btn" class="control-btn">📁 LOAD CSV FILES</button>
+        <button id="play-btn" class="control-btn">▶️ PLAY</button>
+        <button id="pause-btn" class="control-btn">⏸ PAUSE</button>
+        <button id="reset-btn" class="control-btn">🔄 RESET</button>
+        <button id="speed-btn" class="control-btn">⚡ ${playbackSpeed}x SPEED</button>
+        <button id="view-btn" class="control-btn">📷 ${cameraMode.toUpperCase()} VIEW</button>
+    `;
+
+    document.getElementById('load-btn').addEventListener('click', () => {
+        document.getElementById('csv-upload').click();
+    });
+
+    document.getElementById('csv-upload').addEventListener('change', function(event) {
+        const files = event.target.files;
+        if (files.length > 0) {
+            console.log('Loading CSV files:', files);
+            loadRealCSVData(files);
+        }
+    });
+
+    document.getElementById('play-btn').addEventListener('click', () => {
+        if (!processedFlightData.length || !orientationData.length) {
+            alert('Please load both CSV files before playing.');
+            return;
+        }
+        isPlaying = true;
+        document.getElementById('play-btn').classList.add('active');
+        document.getElementById('pause-btn').classList.remove('active');
+        if (currentFrame >= maxFrames) {
+            currentFrame = 0;
+        }
+        animate();
+    });
+
+    document.getElementById('pause-btn').addEventListener('click', () => {
+        isPlaying = false;
+        document.getElementById('pause-btn').classList.add('active');
+        document.getElementById('play-btn').classList.remove('active');
+    });
+
+    document.getElementById('reset-btn').addEventListener('click', () => {
+        currentFrame = 0;
+        isPlaying = false;
+        document.getElementById('play-btn').classList.remove('active');
+        document.getElementById('pause-btn').classList.remove('active');
+        updateVisualization();
+    });
+
+    document.getElementById('speed-btn').addEventListener('click', (e) => {
+        const speeds = [0.5, 1, 2, 5, 10];
+        const currentIndex = speeds.indexOf(playbackSpeed);
+        playbackSpeed = speeds[(currentIndex + 1) % speeds.length];
+        e.target.textContent = `⚡ ${playbackSpeed}x SPEED`;
+    });
+
+    document.getElementById('view-btn').addEventListener('click', (e) => {
+        const modes = ['free', 'track', 'top'];
+        const currentIndex = modes.indexOf(cameraMode);
+        cameraMode = modes[(currentIndex + 1) % modes.length];
+        
+        if (cameraMode === 'track') {
+            e.target.textContent = '📷 TRACK VIEW';
+        } else if (cameraMode === 'top') {
+            e.target.textContent = '📷 TOP VIEW';
+            camera.position.set(0, 200, 0);
+            camera.lookAt(0, 0, 0);
+        } else {
+            e.target.textContent = '📷 FREE VIEW';
+            camera.position.set(50, 50, 50);
+            camera.lookAt(0, 0, 0);
+        }
+        updateVisualization();
+    });
+}
+
+function onWindowResize() {
+    const container = document.getElementById('canvas-container');
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
+}
+
+function loadRealCSVData(files) {
+    if (files.length !== 2) {
+        alert('Please upload exactly two CSV files: one for MPU readings and one for orientation readings.');
+        return;
+    }
+    
+    flightData = [];
+    orientationData = [];
+    let filesProcessed = 0;
+    
+    for (let file of files) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const csv = e.target.result;
+            const lines = csv.split('\n').filter(line => line.trim() !== '');
+            
+            if (file.name.toLowerCase().includes('mpu') || lines[0].includes('Accel')) {
+                // Process MPU data
+                for (let i = 1; i < lines.length; i++) {
+                    const cols = lines[i].split(',');
+                    if (cols.length >= 4) {
+                        flightData.push({
+                            timestamp: cols[0].trim(),
+                            accelX: parseFloat(cols[1]) || 0,
+                            accelY: parseFloat(cols[2]) || 0,
+                            accelZ: parseFloat(cols[3]) || 0
+                        });
+                    }
+                }
+                console.log('Parsed MPU data:', flightData.length, 'points');
+            } else if (file.name.toLowerCase().includes('orientation') || lines[0].includes('Quaternion')) {
+                // Process orientation data
+                for (let i = 1; i < lines.length; i++) {
+                    const cols = lines[i].split(',');
+                    if (cols.length >= 6) {
+                        orientationData.push({
+                            timestamp: cols[0].trim(),
+                            quaternionW: parseFloat(cols[1]) || 1,
+                            quaternionX: parseFloat(cols[2]) || 0,
+                            quaternionY: parseFloat(cols[3]) || 0,
+                            quaternionZ: parseFloat(cols[4]) || 0,
+                            orientation: cols[5].trim() || 'Unknown'
+                        });
+                    }
+                }
+                console.log('Parsed orientation data:', orientationData.length, 'points');
+            }
+            
+            filesProcessed++;
+            if (filesProcessed === files.length) {
+                // Process the flight data to calculate position and velocity
+                processFlightData();
+                
+                maxFrames = Math.min(processedFlightData.length, orientationData.length);
+                currentFrame = 0;
+                
+                console.log(`📊 Ready to simulate ${maxFrames} data points`);
+                console.log(`🎯 Max altitude: ${maxAltitude.toFixed(1)} m`);
+                console.log(`⚡ Max G-force: ${maxG.toFixed(1)} g`);
+                
+                updateVisualization();
+            }
+        };
+        reader.readAsText(file);
+    }
+}
+
+function addVisualEffects() {
+    // Add atmospheric layers
+    for (let i = 1; i <= 5; i++) {
+        const layerGeometry = new THREE.RingGeometry(400 * i, 400 * i + 20, 32);
+        const layerMaterial = new THREE.MeshBasicMaterial({
+            color: new THREE.Color().setHSL(0.6, 0.5, 0.3 - i * 0.05),
+            transparent: true,
+            opacity: 0.05,
+            side: THREE.DoubleSide
+        });
+        const layer = new THREE.Mesh(layerGeometry, layerMaterial);
+        layer.rotation.x = -Math.PI / 2;
+        layer.position.y = i * 100;
+        scene.add(layer);
+    }
+
+    // Add stars
+    const starsGeometry = new THREE.BufferGeometry();
+    const starsMaterial = new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: 0.5
+    });
+
+    const starsPositions = [];
+    for (let i = 0; i < 1000; i++) {
+        starsPositions.push(
+            (Math.random() - 0.5) * 4000,
+            Math.random() * 2000 + 400,
+            (Math.random() - 0.5) * 4000
+        );
+    }
+
+    starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starsPositions, 3));
+    const stars = new THREE.Points(starsGeometry, starsMaterial);
+    scene.add(stars);
+}
+
+function init() {
+    console.log('🚀 Initializing CANSAT Dashboard...');
+    initScene();
+    addVisualEffects();
+    setupControls();
+    console.log('✅ Dashboard initialized successfully!');
+}
+
+// Debug console commands
+window.CANSAT_DEBUG = {
+    skipToPhase: (phaseName) => {
+        if (!processedFlightData.length) {
+            console.error('No processed flight data loaded');
+            return;
+        }
+        const phaseData = processedFlightData.find(d => d.phase && d.phase.name === phaseName);
+        if (phaseData) {
+            currentFrame = processedFlightData.indexOf(phaseData);
+            updateVisualization();
+            console.log(`Skipped to ${phaseName} at frame ${currentFrame}`);
+        } else {
+            console.error(`Phase ${phaseName} not found`);
+        }
+    },
+    skipToApogee: () => {
+        if (!processedFlightData.length) {
+            console.error('No processed flight data loaded');
+            return;
+        }
+        const maxAltIndex = processedFlightData.reduce((maxIdx, d, i) => 
+            d.altitude > processedFlightData[maxIdx].altitude ? i : maxIdx, 0);
+        currentFrame = maxAltIndex;
+        updateVisualization();
+        console.log(`Skipped to apogee at frame ${currentFrame}, altitude: ${processedFlightData[maxAltIndex].altitude.toFixed(1)}m`);
+    },
+    setSpeed: (speed) => {
+        if (speed > 0) {
+            playbackSpeed = speed;
+            const speedBtn = document.getElementById('speed-btn');
+            if (speedBtn) speedBtn.textContent = `⚡ ${speed}x SPEED`;
+            console.log(`Set animation speed to ${speed}x`);
+        } else {
+            console.error('Speed must be positive');
+        }
+    },
+    exportData: () => {
+        if (!processedFlightData.length || !orientationData.length) {
+            console.error('No data to export');
+            return;
+        }
+        const dataBlob = new Blob([JSON.stringify({
+            flightData: flightData,
+            orientationData: orientationData,
+            processedFlightData: processedFlightData
+        }, null, 2)], {type: 'application/json'});
+        const url = URL.createObjectURL(dataBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'cansat_flight_data.json';
+        a.click();
+        URL.revokeObjectURL(url);
+        console.log('Data exported as cansat_flight_data.json');
+    }
+};
+
+window.addEventListener('resize', onWindowResize);
+
+console.log('🔧 Debug commands available in CANSAT_DEBUG object');
+console.log('   - CANSAT_DEBUG.skipToApogee()');
+console.log('   - CANSAT_DEBUG.skipToPhase("LAUNCH")');
+console.log('   - CANSAT_DEBUG.setSpeed(5)');
+console.log('   - CANSAT_DEBUG.exportData()');
+
+document.addEventListener('DOMContentLoaded', init);  
+    </script>
+</body>
+</html>
