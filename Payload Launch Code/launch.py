@@ -1,3 +1,24 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║                          PROJECT INFORMATION                         ║
+╠══════════════════════════════════════════════════════════════════════╣
+║  Project      : IREC 2025 Payload — Pose Estimation & Orientation    ║
+║  Organization : thrustMIT                                             ║
+║  Authors      :                                                      ║
+║      • Tejas Patil                                                   ║
+║      • Aryan Gupta                                                   ║
+║      • Adi Narayn R S                                                ║
+║                                                                      ║
+║  Description :                                                       ║
+║      ▸ Real-time camera-based pose estimation using Hailo AI         ║
+║      ▸ Orientation estimation with Madgwick filter + MPU9250 IMU     ║
+║      ▸ Triggered launch detection via IMU (acceleration threshold)   ║
+║      ▸ Multi-process architecture for camera, pose, servo & logging  ║
+║      ▸ Designed for high reliability in IREC 2025 Rocket Payload     ║
+║                                                                      ║
+║  License      : Proprietary — Internal use for thrustMIT only        ║
+║                           ║
+╚══════════════════════════════════════════════════════════════════════╝
+
 import time
 import os
 import csv
